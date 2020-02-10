@@ -438,7 +438,9 @@ func (rf* Raft) resetElectionTimer(){
 }
 
 func (rf* Raft) promoteToLeader(){
-	//rf.resetElectionTimer(). Will do this in append entries
+	///When I am the leader, I don't expect to receive any append entries request. Hence the timer is stopped.
+	///If I receive an append entry request with a higher term then, I will have to transition to follower and restart the timer.
+	rf.electionTimer.Stop()
 	rf.debug("Promoting myself as LEADER")
 	rf.currentState = Leader
 	rf.sendAppendEntries()
@@ -450,15 +452,13 @@ func (rf* Raft) promoteToLeader(){
 func (rf* Raft) sendAppendEntries() {
 
 	rf.debug("Inside AppendEntries")
-	for {
+	ticker := time.NewTicker(100 * time.Millisecond)
+	for ; true; <-ticker.C{
 		/// First check whether this peer is still the leader. If not stop everything.
 		rf.mu.Lock()
 		if rf.currentState != Leader  {
 			rf.mu.Unlock()
 			break
-		}else{
-			rf.debug("Resetting election timer")
-			rf.resetElectionTimer()
 		}
 		rf.mu.Unlock()
 		/// For each of the peer we shall send a heart beat / append entry.
@@ -490,11 +490,11 @@ func (rf* Raft) sendAppendEntries() {
 				}(peer)
 			}
 		}
-		rf.debug("Resetting election timer at the end")
-		rf.resetElectionTimer()
+		//rf.debug("Resetting election timer at the end")
+		//rf.resetElectionTimer()
 		//Check at the last. This is because this way the first HB will be sent immediately.
-		timer := time.NewTimer(100 * time.Millisecond)
-		<-timer.C
+		//timer := time.NewTimer(100 * time.Millisecond)
+		//<-timer.C
 
 	}
 }
