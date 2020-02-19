@@ -365,6 +365,7 @@ func (rf* Raft)conductElection(){
 					rf.debug(" Before sending the request vote to %d ", id)
 					ok := rf.sendRequestVote(id, &requestVoteArgs, &requestVoteReply)
 					response := ok && requestVoteReply.VoteGranted
+					rf.debug(" The value of OK= %t and VoteGranted = %t ", ok,requestVoteReply.VoteGranted)
 					//Check now whether everything is OK. This is moved from outside as we are creating requestVoteReply within
 					// Go routine.
 					if requestVoteReply.Term > rf.currentTerm {
