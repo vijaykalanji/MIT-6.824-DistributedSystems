@@ -78,6 +78,8 @@ type Raft struct {
 	///for each server, index of highest log entry known to be replicated on server (initialized to 0, increases monotonically)
 	matchIndex []int
 
+    newEntryCh    chan int // frank's suggestion
+
 	currentState  string
 	electionTimer *time.Timer
 	applyCh       chan ApplyMsg
@@ -280,18 +282,23 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	if rf.currentState != Leader {
 		return index, term, false
 	}
-	index = rf.log[len(rf.log)-1].LogIndex + 1
+	newEntryIndex = rf.log[len(rf.log)-1].LogIndex + 1
 	term = rf.currentTerm
 	// Attach this log entry to the local log first. Then replicate this entry to
 	// all other peers.
 	currentLogEntry := LogEntry{
-		LogIndex: index,
+		LogIndex: newEntryIndex,
 		Command:  command,
 		Term:     rf.currentTerm,
 	}
 	rf.log = append(rf.log, currentLogEntry)
-	go rf.sendAppendEntries()
-	return index, term, isLeader
+    // frank's suggestion:
+    go func() {
+        rf.newEntryCh <- newEntryIndex
+
+    }()
+	// go rf.sendAppendEntries()
+	return newEntryIndex, term, isLeader
 }
 
 //
@@ -467,7 +474,13 @@ func (rf *Raft) sendAppendEntries() {
 
 	rf.debug("Inside sendAppendEntries")
 	ticker := time.NewTicker(100 * time.Millisecond)
-	for ; true; <-ticker.C {
+	for {
+        // frank's suggestion:
+        select {
+        case <-ticker.C :
+        case <-rf.newEntryCh:
+        }
+
 		/// First check whether this peer is still the leader. If not stop everything.
 		rf.mu.Lock()
 		if rf.currentState != Leader {
