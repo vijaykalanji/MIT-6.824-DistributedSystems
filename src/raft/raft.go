@@ -78,7 +78,7 @@ type Raft struct {
 	///for each server, index of highest log entry known to be replicated on server (initialized to 0, increases monotonically)
 	matchIndex []int
 
-    newEntryCh    chan int // frank's suggestion
+	newEntryCh chan int // frank's suggestion
 
 	currentState  string
 	electionTimer *time.Timer
@@ -282,7 +282,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	if rf.currentState != Leader {
 		return index, term, false
 	}
-	newEntryIndex = rf.log[len(rf.log)-1].LogIndex + 1
+	newEntryIndex := rf.log[len(rf.log)-1].LogIndex + 1
 	term = rf.currentTerm
 	// Attach this log entry to the local log first. Then replicate this entry to
 	// all other peers.
@@ -292,11 +292,11 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		Term:     rf.currentTerm,
 	}
 	rf.log = append(rf.log, currentLogEntry)
-    // frank's suggestion:
-    go func() {
-        rf.newEntryCh <- newEntryIndex
+	// frank's suggestion:
+	go func() {
+		rf.newEntryCh <- newEntryIndex
 
-    }()
+	}()
 	// go rf.sendAppendEntries()
 	return newEntryIndex, term, isLeader
 }
@@ -475,11 +475,11 @@ func (rf *Raft) sendAppendEntries() {
 	rf.debug("Inside sendAppendEntries")
 	ticker := time.NewTicker(100 * time.Millisecond)
 	for {
-        // frank's suggestion:
-        select {
-        case <-ticker.C :
-        case <-rf.newEntryCh:
-        }
+		// frank's suggestion:
+		select {
+		case <-ticker.C:
+		case <-rf.newEntryCh:
+		}
 
 		/// First check whether this peer is still the leader. If not stop everything.
 		rf.mu.Lock()
@@ -491,11 +491,13 @@ func (rf *Raft) sendAppendEntries() {
 		/// For each of the peer we shall send a heart beat / append entry.
 		for peer := range rf.peers {
 			indexOfLastLogEntry := rf.getIndexOfLastLogEntry()
-			if peer != rf.me { //Send append entries.
+			if peer != rf.me {
 				go func(peerId int) {
 					if indexOfLastLogEntry > 0 && (indexOfLastLogEntry-rf.nextIndex[peerId]) >= 0 {
+						//Send append entries.
 
-					} else { // Send heart beats
+					} else {
+						// Send heart beats
 						prevLogIndex, prevLogTerm := rf.getPrevLogDetails(peerId)
 						reply := AppendEntriesReply{}
 						args := AppendEntriesArgs{
@@ -531,8 +533,6 @@ func (rf *Raft) sendAppendEntries() {
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	// Resetting as we received a heart beat.
-	rf.resetElectionTimer()
 	rf.debug("AppendEntries: from LEADER %#v \n", args)
 	rf.debug("My current state: %#v \n", rf)
 	//1. Reply false if term < currentTerm (§5.1)
@@ -550,6 +550,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	//5. If leaderCommit > commitIndex, set commitIndex =
 	//	min(leaderCommit, index of last new entry)
 	/////////////Pending implementation point 5 above.
+	//1. Reply false if term < currentTerm (§5.1)
 	if args.Term < rf.currentTerm {
 		reply.Success = false
 		reply.Term = rf.currentTerm
@@ -557,51 +558,45 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	}
 	rf.debug("Update my term to that of the leaders %d", args.Term)
 	rf.currentTerm = args.Term
-	rf.debug("Dereferencing %d", len(rf.log)-1)
-	rf.debug("Current log contents %v", rf.log)
+	rf.debug("Dereferencing %d length of the my log =>", len(rf.log)-1)
+	rf.debug("Current log contents for this peer => %v ", rf.log)
 	// Check first whether it is a heartbeat or an actual append entry.
 	// If it is heartbeat, then just reset the timer and then go back.
 	//Otherwise, we need to add the entries into the logs of this peer.
 	// If this is heart beat, then we know that the command is going to be nil.
 	// Identify this and return.
 	lastLogEntryIndex := len(rf.log) - 1
+	//If we have reached this point then the request has to be one of heart beat or append entries.
+	//As a first step we will reset the election timer.
+	rf.resetElectionTimer()
 	if args.LogEntries == nil {
 		//This is heart beat
 		reply.Term = rf.currentTerm
 		rf.debug("Received a HEART BEAT.")
 	} else {
 		rf.debug("Received an APPEND ENTRY. PROCESSING")
-		lastLogEntry := rf.log[len(rf.log)-1]
-		//1a
-		if lastLogEntryIndex < args.PreviousLogIndex {
+		var curEntry LogEntry
+		if len(rf.log) >= args.PreviousLogIndex {
+			curEntry = rf.log[args.PreviousLogIndex]
+		} else {
 			reply.Success = false
-			reply.NextIndex = lastLogEntryIndex
-			rf.debug("1a \n")
+			//reply.NextIndex = len(rf.log)-1
 			return
 		}
-		//1b
-		if lastLogEntryIndex > args.PreviousLogIndex {
+		//2. Reply false if log doesn’t contain an entry at prevLogIndex
+		//whose term matches prevLogTerm (§5.3)
+		if curEntry.Term != args.PreviousLogTerm {
+			rf.debug("**FALSE**: 2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3)")
 			reply.Success = false
-			rf.debug("Last log entry index --> %d, PreviousLogIndex From LEADER -->%d", lastLogEntryIndex, args.PreviousLogIndex)
-			rf.log = rf.log[:len(rf.log)-1]
+			//reply.NextIndex = lastLogEntryIndex
 			return
 		}
-		//3
-		if lastLogEntry.Term != args.PreviousLogTerm {
-			reply.Success = false
-			//Reduce size by 1;
-			rf.debug("3 \n")
-			rf.log = rf.log[:len(rf.log)-1]
-			return
-		}
-
-		// 4 We are good to apply the command.
-		rf.printSlice(rf.log, "Before")
-		rf.debug("Printing the entry to be added within the handler %v", args.LogEntries)
+		//3. If an existing entry conflicts with a new one (same index
+		//but different terms), delete the existing entry and all that
+		//follow it (§5.3)
+		//Clean up everything to the right of matched index
+		rf.log = rf.log[:args.PreviousLogIndex+1]
 		rf.log = append(rf.log, args.LogEntries...)
-		rf.printSlice(rf.log, "After")
-		rf.debug("\n Applied the command to the log. Log size is -->%d \n", len(rf.log))
-		//5
 	}
 	if args.LeaderCommit > rf.commitIndex {
 		rf.debug("5 Update commitIndex. LeaderCommit %v  rf.commitIndex %v \n", args.LeaderCommit, rf.commitIndex)
@@ -609,16 +604,19 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		oldCommitIndex := rf.commitIndex
 		rf.commitIndex = min(args.LeaderCommit, lastLogEntryIndex+1)
 		rf.debug("moving ci from %v to %v", oldCommitIndex, rf.commitIndex)
-		//Send all the received entries into the channel
-		j := 0
-		for i := oldCommitIndex; i < args.LeaderCommit; i++ {
-			rf.debug("Committing %v ", i)
-			applyMsg := ApplyMsg{CommandValid: true, Command: rf.log[i].Command, CommandIndex: i}
-			j++
-			rf.debug("Sent a response to the end client ")
-			rf.debug("applyMsg %v", applyMsg)
-			rf.applyCh <- applyMsg
-		}
+
+		go func() {
+			//Send all the received entries into the channel
+			j := 0
+			for i := oldCommitIndex; i < args.LeaderCommit; i++ {
+				rf.debug("Committing %v ", i)
+				applyMsg := ApplyMsg{CommandValid: true, Command: rf.log[i].Command, CommandIndex: i}
+				j++
+				rf.debug("Sent a response to the end client ")
+				rf.debug("applyMsg %v", applyMsg)
+				rf.applyCh <- applyMsg
+			}
+		}()
 	}
 	reply.Success = true
 	//Check at the last. This is because this way the first HB will be sent immediately.
