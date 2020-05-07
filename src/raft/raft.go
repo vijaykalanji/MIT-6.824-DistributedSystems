@@ -513,6 +513,13 @@ func (rf *Raft) sendAppendEntries() {
 							rf.transitionToFollower(reply.Term)
 							rf.mu.Unlock()
 						}
+						if ok {
+							//Update the nextIndex for this peer.
+							rf.nextIndex[peerId] = indexOfLastLogEntry+1;
+						} else{
+							rf.nextIndex[peerId] = rf.nextIndex[peerId]-1;
+						}
+						rf.moveCommitIndex()
 				}(peer)
 			}
 		}
@@ -524,6 +531,25 @@ func (rf *Raft) sendAppendEntries() {
 
 	}
 }
+
+func (rf *Raft)  moveCommitIndex() {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
+	for i := rf.commitIndex; i< len(rf.log);i++ {
+		majorityAgreed :=0
+		for j:=0;j< len(rf.matchIndex);j++{
+			if rf.matchIndex[j] >= i{
+				majorityAgreed++
+			}
+		}
+		if majorityAgreed > (len(rf.peers) / 2) {
+			rf.commitIndex++
+			rf.applyCh <- ApplyMsg {CommandValid: true, Command:rf.log[i].Command, CommandIndex:i}
+		}
+	}
+}
+
 
 // This is the receiver for append entries.
 
