@@ -493,19 +493,17 @@ func (rf *Raft) sendAppendEntries() {
 			indexOfLastLogEntry := rf.getIndexOfLastLogEntry()
 			if peer != rf.me {
 				go func(peerId int) {
-					if indexOfLastLogEntry > 0 && (indexOfLastLogEntry-rf.nextIndex[peerId]) >= 0 {
-						//Send append entries.
-
-					} else {
-						// Send heart beats
+						rf.debug("Qqqqqqq Sending append log entries/heartbeat")
 						prevLogIndex, prevLogTerm := rf.getPrevLogDetails(peerId)
+						logEntries := make([]LogEntry, indexOfLastLogEntry-rf.nextIndex[peerId])
+						copy(logEntries, rf.log[rf.nextIndex[peerId]:])
 						reply := AppendEntriesReply{}
 						args := AppendEntriesArgs{
 							Term:             rf.currentTerm,
 							LeaderID:         rf.me,
 							PreviousLogIndex: prevLogIndex,
 							PreviousLogTerm:  prevLogTerm,
-							LogEntries:       make([]LogEntry, 0), //Empty array
+							LogEntries:       logEntries,
 							LeaderCommit:     rf.commitIndex,
 						}
 						requestName := "Raft.AppendEntries"
@@ -515,7 +513,6 @@ func (rf *Raft) sendAppendEntries() {
 							rf.transitionToFollower(reply.Term)
 							rf.mu.Unlock()
 						}
-					}
 				}(peer)
 			}
 		}
