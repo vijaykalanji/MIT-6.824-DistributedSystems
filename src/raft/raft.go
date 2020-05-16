@@ -332,6 +332,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	/// Initialized to 0 on first boot, increases monotonically (From the paper)
 	rf.currentTerm = 0
 	rf.nextIndex = make([]int, len(peers))
+	rf.matchIndex = make([]int, len(peers))
 	rf.votedFor = -1
 	rf.currentState = Follower
 	// Your initialization code here (2A, 2B, 2C).
@@ -459,11 +460,23 @@ func (rf *Raft) resetElectionTimer() {
 }
 
 func (rf *Raft) promoteToLeader() {
+	rf.mu.Lock()
 	///When I am the leader, I don't expect to receive any append entries request. Hence the timer is stopped.
 	///If I receive an append entry request with a higher term then, I will have to transition to follower and restart the timer.
 	rf.electionTimer.Stop()
 	rf.debug("Promoting myself as LEADER")
 	rf.currentState = Leader
+	//Paper: (Reinitialized after election)
+	//nextIndex[] for each server, index of the next log entry to send to that server (initialized to leader last log index + 1)
+	//matchIndex[] for each server, index of highest log entry
+	//known to be replicated on server
+	//(initialized to 0, increases monotonically)
+	lastLogEntryIndex := rf.getIndexOfLastLogEntry()
+	for index, _ := range rf.nextIndex {
+		rf.nextIndex[index] = lastLogEntryIndex + 1
+		rf.matchIndex[index] = 0
+	}
+	rf.mu.Unlock()
 	rf.sendAppendEntries()
 }
 
@@ -490,12 +503,14 @@ func (rf *Raft) sendAppendEntries() {
 		rf.mu.Unlock()
 		/// For each of the peer we shall send a heart beat / append entry.
 		for peer := range rf.peers {
-			indexOfLastLogEntry := rf.getIndexOfLastLogEntry()
+			indexOfLastLogEntry := rf.getIndexOfLastLogEntry() + 1
 			if peer != rf.me {
 				go func(peerId int) {
 						rf.debug("Qqqqqqq Sending append log entries/heartbeat")
 						prevLogIndex, prevLogTerm := rf.getPrevLogDetails(peerId)
-						logEntries := make([]LogEntry, indexOfLastLogEntry-rf.nextIndex[peerId])
+						rf.debug ("indexOfLastLogEntry-rf.nextIndex[peerId] ===> %d   %d",indexOfLastLogEntry,rf.nextIndex[peerId])
+						logEntrySixe := indexOfLastLogEntry-rf.nextIndex[peerId]
+						logEntries := make([]LogEntry, logEntrySixe)
 						copy(logEntries, rf.log[rf.nextIndex[peerId]:])
 						reply := AppendEntriesReply{}
 						args := AppendEntriesArgs{
