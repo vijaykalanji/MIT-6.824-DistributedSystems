@@ -167,10 +167,13 @@ func (cfg *config) start1(i int) {
 	applyCh := make(chan ApplyMsg)
 	go func() {
 		for m := range applyCh {
+            Dprintf(9, "", "%d got msg from applych", i)
 			err_msg := ""
 			if m.CommandValid == false {
+                Dprintf(9, "", "%d is ignoring this msg, command not valid")
 				// ignore other types of ApplyMsg
 			} else if v, ok := (m.Command).(int); ok {
+                Dprintf(9, "", "grabbing config lock")
 				cfg.mu.Lock()
 				for j := 0; j < len(cfg.logs); j++ {
 					if old, oldok := cfg.logs[j][m.CommandIndex]; oldok && old != v {
@@ -179,6 +182,7 @@ func (cfg *config) start1(i int) {
 							m.CommandIndex, i, m.Command, j, old)
 					}
 				}
+                Dprintf(9, "", "%d adding msg to state machine")
 				_, prevok := cfg.logs[i][m.CommandIndex-1]
 				cfg.logs[i][m.CommandIndex] = v
 				if m.CommandIndex > cfg.maxIndex {
