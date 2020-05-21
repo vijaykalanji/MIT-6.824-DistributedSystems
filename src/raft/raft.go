@@ -291,6 +291,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		Command:  command,
 		Term:     rf.currentTerm,
 	}
+	rf.debug( " @@@@@@@@@@@@@@@@@@@@@@@@@@@ NEW COMMAND TO ADD TO LOG @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ %#v",currentLogEntry)
 	rf.log = append(rf.log, currentLogEntry)
 	// frank's suggestion:
 	go func() {
@@ -644,7 +645,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.log = append(rf.log, args.LogEntries...)
 	}
 	if args.LeaderCommit > rf.commitIndex {
-		rf.debug("5 Update commitIndex. LeaderCommit %v  rf.commitIndex %v \n", args.LeaderCommit, rf.commitIndex)
+		rf.debug("(5) Update commitIndex. LeaderCommit %v  rf.commitIndex %v \n", args.LeaderCommit, rf.commitIndex)
 		//Check whether all the entries are committed prior to this.
 		oldCommitIndex := rf.commitIndex
 		rf.commitIndex = min(args.LeaderCommit, lastLogEntryIndex+1)
@@ -653,11 +654,15 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		go func() {
 			//Send all the received entries into the channel
 			j := 0
-			for i := oldCommitIndex; i < args.LeaderCommit; i++ {
+			rf.debug("OLD COMMIT INDEX %d, LEADER COMMIT %d  ", oldCommitIndex, args.LeaderCommit)
+			for i := oldCommitIndex; i <= args.LeaderCommit; i++ {
+				if i==0 { // Position
+					continue
+				}
 				rf.debug("Committing %v ", i)
 				applyMsg := ApplyMsg{CommandValid: true, Command: rf.log[i].Command, CommandIndex: i}
 				j++
-				rf.debug("Sent a response to the end client ")
+				rf.debug("Sent a response to Apply Channel ")
 				rf.debug("applyMsg %v", applyMsg)
 				rf.applyCh <- applyMsg
 			}
