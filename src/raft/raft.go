@@ -328,6 +328,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf := &Raft{}
 	rf.peers = peers
 	rf.persister = persister
+	rf.applyCh = applyCh
 	rf.me = me
 	rf.electionTimer = time.NewTimer((400 + time.Duration(rand.Intn(300))) * time.Millisecond)
 	/// Initialized to 0 on first boot, increases monotonically (From the paper)
@@ -556,6 +557,9 @@ func (rf *Raft)  moveCommitIndex() {
 
 	for i := rf.commitIndex; i< len(rf.log);i++ {
 		majorityAgreed :=0
+		if i==0 { // Position
+			continue
+		}
 		for j:=0;j< len(rf.matchIndex);j++{
 			if rf.matchIndex[j] >= i{
 				majorityAgreed++

@@ -170,7 +170,7 @@ func (cfg *config) start1(i int) {
             Dprintf(9, "", "%d got msg from applych", i)
 			err_msg := ""
 			if m.CommandValid == false {
-                Dprintf(9, "", "%d is ignoring this msg, command not valid")
+                Dprintf(9, "", "%d is ignoring this msg, command not valid",i)
 				// ignore other types of ApplyMsg
 			} else if v, ok := (m.Command).(int); ok {
                 Dprintf(9, "", "grabbing config lock")
@@ -182,7 +182,7 @@ func (cfg *config) start1(i int) {
 							m.CommandIndex, i, m.Command, j, old)
 					}
 				}
-                Dprintf(9, "", "%d adding msg to state machine")
+                Dprintf(9, "", "%d adding msg to state machine", i)
 				_, prevok := cfg.logs[i][m.CommandIndex-1]
 				cfg.logs[i][m.CommandIndex] = v
 				if m.CommandIndex > cfg.maxIndex {
