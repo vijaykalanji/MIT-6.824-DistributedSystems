@@ -373,9 +373,12 @@ func (cfg *config) nCommitted(index int) (int, interface{}) {
 				cfg.t.Fatalf("committed values do not match: index %v, %v, %v\n",
 					index, cmd, cmd1)
 			}
+            Dprintf(9, "","%d has correct entry @ %d", i, index)
 			count += 1
 			cmd = cmd1
-		}
+        } else {
+            Dprintf(9, "", "%d does not have correct entry @ %d", i, index)
+        }
 	}
 	return count, cmd
 }
@@ -447,24 +450,30 @@ func (cfg *config) one(cmd int, expectedServers int, retry bool) int {
 		}
 
 		if index != -1 {
+            Dprintf(9, "", "found leader=%d, started cmd", index)
 			// somebody claimed to be the leader and to have
 			// submitted our command; wait a while for agreement.
 			t1 := time.Now()
 			for time.Since(t1).Seconds() < 2 {
 				nd, cmd1 := cfg.nCommitted(index)
+                Dprintf(9, "", "%d think %v is committed", nd, cmd1)
 				if nd > 0 && nd >= expectedServers {
 					// committed
 					if cmd2, ok := cmd1.(int); ok && cmd2 == cmd {
 						// and it was the command we submitted.
 						return index
-					}
+                    } else {
+                        Dprintf(9, "", "found wrong cmd!")
+                    }
 				}
+                Dprintf(9, "", "not enough checking again...")
 				time.Sleep(20 * time.Millisecond)
 			}
 			if retry == false {
-				cfg.t.Fatalf("one(%v) failed to reach agreement", cmd)
+				cfg.t.Fatalf("one(%v) failed to reach agreement (no retry)", cmd)
 			}
 		} else {
+            Dprintf(9, "", "no leader found yet, retrying...")
 			time.Sleep(50 * time.Millisecond)
 		}
 	}
