@@ -507,9 +507,10 @@ func (rf *Raft) sendAppendEntries() {
 			indexOfLastLogEntry := rf.getIndexOfLastLogEntry() + 1
 			if peer != rf.me {
 				go func(peerId int) {
-						rf.debug("Qqqqqqq Sending append log entries/heartbeat")
+						rf.debug("Qqqqqqq Sending append log entries/heartbeat to peer %d",peerId)
 						prevLogIndex, prevLogTerm := rf.getPrevLogDetails(peerId)
-						rf.debug ("indexOfLastLogEntry-rf.nextIndex[peerId] ===> %d   %d",indexOfLastLogEntry,rf.nextIndex[peerId])
+					//rf.debug ("indexOfLastLogEntry")
+						rf.debug ("indexOfLastLogEntry, rf.nextIndex[peerId] ===> %d   %d",indexOfLastLogEntry,rf.nextIndex[peerId])
 						logEntrySixe := indexOfLastLogEntry-rf.nextIndex[peerId]
 						logEntries := make([]LogEntry, logEntrySixe)
 						copy(logEntries, rf.log[rf.nextIndex[peerId]:])
@@ -533,6 +534,7 @@ func (rf *Raft) sendAppendEntries() {
 						if ok {
 							//Update the nextIndex for this peer.
 							rf.nextIndex[peerId] = rf.nextIndex[peerId] + len(logEntries)
+							rf.matchIndex[peerId] = rf.matchIndex[peerId] + len(logEntries)
 						} else{
 							rf.nextIndex[peerId] = rf.nextIndex[peerId]-1
 						}
@@ -659,7 +661,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			//Send all the received entries into the channel
 			j := 0
 			rf.debug("OLD COMMIT INDEX %d, LEADER COMMIT %d  ", oldCommitIndex, args.LeaderCommit)
-			for i := oldCommitIndex; i <= args.LeaderCommit; i++ {
+			for i := oldCommitIndex; i < args.LeaderCommit; i++ {
 				if i==0 { // Position
 					continue
 				}
