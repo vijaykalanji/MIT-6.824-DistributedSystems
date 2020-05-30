@@ -194,23 +194,32 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
 
 	rf.mu.Lock()
-	////rf.debug("***************Inside the RPC handler for sendRequestVote *********************")
+	rf.debug("***************Inside RequestVote Receiver Handler *********************")
 	defer rf.mu.Unlock()
 	var lastIndex int
-	//var lastTerm  int
+	var lastTerm  int
 	if len(rf.log) > 0 {
 		lastLogEntry := rf.log[len(rf.log)-1]
 		lastIndex = lastLogEntry.LogIndex
-		//lastTerm = lastLogEntry.lastLogTerm
+		lastTerm = lastLogEntry.Term
 	} else {
 		lastIndex = 0
-		//lastTerm = 0
+		lastTerm = 0
 	}
 	reply.Term = rf.currentTerm
-	////rf.debug("Checking whether I can grant a vote. args.Term = %d & rf.currentTerm = %d ", args.Term, rf.currentTerm)
-	if args.Term < rf.currentTerm {
+	rf.debug("lastTerm = %d & args.LastLogTerm = %d  lastIndex = %d args.LastLogIndex =%d", lastTerm, args.LastLogTerm,lastIndex, args.LastLogIndex)
+	//|| lastTerm> args.LastLogTerm || lastIndex > args.LastLogIndex
+	if lastTerm > args.LastLogTerm || lastIndex > args.LastLogIndex {
+		rf.debug("***************lastTerm & lastIndex check & returning FALSE for the request *********************")
 		reply.VoteGranted = false
+		return
+	}
+	if args.Term < rf.currentTerm  {
+		reply.VoteGranted = false
+		return
 		////rf.debug("My term is higher than candidate's term, myTerm = %d, candidate's term = %d", rf.currentTerm, args.Term)
+		//If votedFor is null or candidateId, and candidate’s log is at
+		//least as up-to-date as receiver’s log, grant vote (§5.2, §5.4)
 	} else if (rf.votedFor == -1 || rf.votedFor == args.CandidateId) && args.LastLogIndex >= lastIndex {
 		rf.votedFor = args.CandidateId
 		reply.VoteGranted = true
@@ -453,7 +462,7 @@ func (rf *Raft) transitionToFollower(newTerm int) {
 }
 
 func (rf *Raft) resetElectionTimer() {
-	rf.debug("Restarting my timer")
+	rf.debug("Resetting my election timer.")
 	rf.electionTimer.Stop()
 	rf.electionTimer.Reset((400 + time.Duration(rand.Intn(300))) * time.Millisecond)
 }
@@ -509,7 +518,7 @@ func (rf *Raft) sendAppendEntries() {
 			if peer != rf.me {
 				go func(peerId int) {
 						prevLogIndex, prevLogTerm := rf.getPrevLogDetails(peerId)
-						rf.debug ("Peer id = %d indexOfLastLogEntry, rf.nextIndex[peerId] ===> %d   %d",peerId,indexOfLastLogEntry,rf.nextIndex[peerId])
+						rf.debug ("Peer id = %d indexOfLastLogEntry = %d , rf.nextIndex[peerId] ===> %d",peerId,indexOfLastLogEntry,rf.nextIndex[peerId])
 						logEntrySize := indexOfLastLogEntry-rf.nextIndex[peerId]
 						logEntries := make([]LogEntry, logEntrySize)
 						copy(logEntries, rf.log[rf.nextIndex[peerId]:])
@@ -530,14 +539,17 @@ func (rf *Raft) sendAppendEntries() {
 							rf.transitionToFollower(reply.Term)
 							rf.mu.Unlock()
 						}
-						if ok {
+						if ok && reply.Success{
 							//Update the nextIndex for this peer.
+							rf.debug ("Peer %d accepted the append entries . Response was ===> %#v \n",peerId,reply)
 							rf.nextIndex[peerId] = rf.nextIndex[peerId] + len(logEntries)
 							rf.matchIndex[peerId] = rf.matchIndex[peerId] + len(logEntries)
 						} else{
-							if rf.nextIndex[peerId] > 0 {
-								rf.nextIndex[peerId] = rf.nextIndex[peerId] - 1
-							}
+							rf.debug ("Peer %d did not accept append entries. Response was ===> %#v \n",peerId,reply)
+							//if rf.nextIndex[peerId] > 0 {
+								rf.debug ("Updating the nextIndex of %d  peer to  ===> %d \n",peerId,reply.NextIndex)
+								rf.nextIndex[peerId] = reply.NextIndex
+							//}
 						}
 						rf.moveCommitIndex()
 				}(peer)
@@ -587,6 +599,7 @@ func (rf *Raft)  moveCommitIndex() {
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
+	rf.debug("Received an APPEND ENTRY/HEART BEAT. PROCESSING")
 	rf.debug("AppendEntries: from LEADER %#v \n", args)
 	rf.debug("My current state: %#v \n", rf)
 	//1. Reply false if term < currentTerm (§5.1)
@@ -598,7 +611,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	//2. Reply false if log doesn’t contain an entry at prevLogIndex
 	//whose term matches prevLogTerm (§5.3)
 	//3. If an existing entry conflicts with a new one (same index
-	//but different terms), delete the existing entry and all that
+	//but different terms), delete the exis	ting entry and all that
 	//follow it (§5.3)
 	//4. Append any new entries not already in the log
 	//5. If leaderCommit > commitIndex, set commitIndex =
@@ -620,28 +633,30 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	// If this is heart beat, then we know that the command is going to be nil.
 	// Identify this and return.
 	lastLogEntryIndex := len(rf.log) - 1
+	rf.debug("lastLogEntryIndex %d", lastLogEntryIndex)
 	//If we have reached this point then the request has to be one of heart beat or append entries.
 	//As a first step we will reset the election timer.
 	rf.resetElectionTimer()
 	reply.Term = rf.currentTerm
-	if args.LogEntries== nil {
-		//This is heart beat
-		rf.debug("Received a HEART BEAT.")
-	} else {
-		rf.debug("Received an APPEND ENTRY. PROCESSING")
-		var curEntry LogEntry
-		if len(rf.log) >= args.PreviousLogIndex {
+	var curEntry LogEntry
+	rf.debug("RF LOG  %#v    args.PreviousLogIndex = %d",rf.log,args.PreviousLogIndex)
+		if len(rf.log) > args.PreviousLogIndex {
 			curEntry = rf.log[args.PreviousLogIndex]
 		} else {
 			reply.Success = false
+			reply.NextIndex = len(rf.log)
+			rf.debug("I did not agree with AppendEntries. Setting nextIndex to %d and returning FALSE",reply.NextIndex)
 			return
 		}
 		//2. Reply false if log doesn’t contain an entry at prevLogIndex
 		//whose term matches prevLogTerm (§5.3)
 		if curEntry.Term != args.PreviousLogTerm {
-			rf.debug("**FALSE**: 2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3)")
+			rf.debug("**FALSE**: 2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3). Set the reply.NextIndex to %d ",reply.NextIndex)
+			rf.debug("Setting the nextIndex for this peer to be %d. The contents of the logs  = %#v ",len(rf.log) ,rf.log)
 			reply.Success = false
-			//reply.NextIndex = lastLogEntryIndex
+			reply.Term = curEntry.Term
+			reply.NextIndex = len(rf.log)
+			rf.debug("The contents of the reply to the leader  %#v ",reply)
 			return
 		}
 		//3. If an existing entry conflicts with a new one (same index
@@ -650,14 +665,13 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		//Clean up everything to the right of matched index
 		rf.log = rf.log[:args.PreviousLogIndex+1]
 		rf.log = append(rf.log, args.LogEntries...)
-	}
+	//}
 	if args.LeaderCommit > rf.commitIndex {
 		rf.debug("(5) Update commitIndex. LeaderCommit %v  rf.commitIndex %v \n", args.LeaderCommit, rf.commitIndex)
 		//Check whether all the entries are committed prior to this.
 		oldCommitIndex := rf.commitIndex
 		rf.commitIndex = min(args.LeaderCommit, lastLogEntryIndex+1)
 		rf.debug("moving ci from %v to %v", oldCommitIndex, rf.commitIndex)
-
 		go func() {
 			//Send all the received entries into the channel
 			j := 0
@@ -689,7 +703,7 @@ func (rf *Raft) getPrevLogDetails(peerId int) (int, int) {
 		prevLog := rf.log[nextIndex-1]
 		return nextIndex - 1, prevLog.Term
 	} else {
-		return -1, -1
+		return 0, 0
 	}
 }
 

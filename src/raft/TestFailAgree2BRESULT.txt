@@ -1,0 +1,402 @@
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   86    7
+PASS
+ok  	raft	4.467s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.2  3   84    7
+PASS
+ok  	raft	4.314s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   88    7
+PASS
+ok  	raft	4.421s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.448s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.439s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   86    7
+PASS
+ok  	raft	4.562s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.457s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   92    7
+PASS
+ok  	raft	4.616s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   86    7
+PASS
+ok  	raft	4.577s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.2  3   84    7
+PASS
+ok  	raft	4.300s
+Test (2B): agreement despite follower disconnection ...
+--- FAIL: TestFailAgree2B (2.60s)
+    config.go:477: one(101) failed to reach agreement (no retry)
+FAIL
+exit status 1
+FAIL	raft	2.683s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.486s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.481s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.456s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   86    7
+PASS
+ok  	raft	4.407s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   86    7
+PASS
+ok  	raft	4.528s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   86    7
+PASS
+ok  	raft	4.425s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.439s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   88    7
+PASS
+ok  	raft	4.572s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   88    7
+PASS
+ok  	raft	4.556s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   86    7
+PASS
+ok  	raft	4.432s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   86    7
+PASS
+ok  	raft	4.549s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   88    7
+PASS
+ok  	raft	4.521s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.6  3   88    7
+PASS
+ok  	raft	4.680s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.2  3   80    7
+PASS
+ok  	raft	4.298s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.496s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.665s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   86    7
+PASS
+ok  	raft	4.426s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   88    7
+PASS
+ok  	raft	4.598s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.2  3   84    7
+PASS
+ok  	raft	4.328s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.517s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.8  3   94    7
+PASS
+ok  	raft	4.864s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.502s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.518s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.449s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   86    7
+PASS
+ok  	raft	4.417s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   88    7
+PASS
+ok  	raft	4.518s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   88    7
+PASS
+ok  	raft	4.447s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.429s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   86    7
+PASS
+ok  	raft	4.557s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.2  3   84    7
+PASS
+ok  	raft	4.312s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.366s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   86    7
+PASS
+ok  	raft	4.689s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   88    7
+PASS
+ok  	raft	4.599s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.470s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.509s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.7  3   92    7
+PASS
+ok  	raft	4.730s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   86    7
+PASS
+ok  	raft	4.566s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   88    7
+PASS
+ok  	raft	4.608s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.345s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.400s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.649s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.425s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   86    7
+PASS
+ok  	raft	4.448s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.393s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.476s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.573s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.415s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.515s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.537s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   88    7
+PASS
+ok  	raft	4.512s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.543s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   88    7
+PASS
+ok  	raft	4.551s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.411s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   86    7
+PASS
+ok  	raft	4.409s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.412s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.2  3   86    7
+PASS
+ok  	raft	4.320s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.500s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   86    7
+PASS
+ok  	raft	4.381s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   86    7
+PASS
+ok  	raft	4.534s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.493s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.523s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.2  3   84    7
+PASS
+ok  	raft	4.306s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.442s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.389s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   88    7
+PASS
+ok  	raft	4.516s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   86    7
+PASS
+ok  	raft	4.560s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   88    7
+PASS
+ok  	raft	4.527s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.470s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.346s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.537s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.494s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.2  3   84    7
+PASS
+ok  	raft	4.334s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   88    7
+PASS
+ok  	raft	4.545s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   90    7
+PASS
+ok  	raft	4.550s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.360s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   86    7
+PASS
+ok  	raft	4.557s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.474s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   88    7
+PASS
+ok  	raft	4.489s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.541s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.517s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   86    7
+PASS
+ok  	raft	4.433s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.3  3   84    7
+PASS
+ok  	raft	4.405s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.496s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   88    7
+PASS
+ok  	raft	4.504s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.486s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.5  3   88    7
+PASS
+ok  	raft	4.576s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   86    7
+PASS
+ok  	raft	4.482s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.4  3   88    7
+PASS
+ok  	raft	4.465s
+Test (2B): agreement despite follower disconnection ...
+  ... Passed --   4.7  3   90    7
+PASS
+ok  	raft	4.790s
