@@ -493,7 +493,6 @@ func (rf *Raft) promoteToLeader() {
 /// If there are no such entries then it will send a heart beat (Null entry).
 /// I treat each peer independently. So, we consult the array nextIndex to see how many entries have we sent already for a peer.
 func (rf *Raft) sendAppendEntries() {
-
 	rf.debug("Inside sendAppendEntries")
 	ticker := time.NewTicker(100 * time.Millisecond)
 	for {
@@ -502,15 +501,14 @@ func (rf *Raft) sendAppendEntries() {
 		case <-ticker.C:
 		case <-rf.newEntryCh:
 		}
-
 		/// First check whether this peer is still the leader. If not stop everything.
-		rf.debug("Try to get the lock ")
+		//rf.debug("Try to get the lock ")
 		rf.mu.Lock()
 		if rf.currentState != Leader {
 			rf.mu.Unlock()
 			break
 		}
-		rf.debug("Before releasing the  acquired the lock ")
+		//rf.debug("Before releasing the  acquired the lock ")
 		rf.mu.Unlock()
 		/// For each of the peer we shall send a heart beat / append entry.
 		for peer := range rf.peers {
@@ -518,7 +516,7 @@ func (rf *Raft) sendAppendEntries() {
 			if peer != rf.me {
 				go func(peerId int) {
 						prevLogIndex, prevLogTerm := rf.getPrevLogDetails(peerId)
-						rf.debug ("Peer id = %d indexOfLastLogEntry = %d , rf.nextIndex[peerId] ===> %d",peerId,indexOfLastLogEntry,rf.nextIndex[peerId])
+						rf.debug (" Inside sendAppendEntries(). Peer id = %d indexOfLastLogEntry = %d , rf.nextIndex[peerId] ===> %d",peerId,indexOfLastLogEntry,rf.nextIndex[peerId])
 						logEntrySize := indexOfLastLogEntry-rf.nextIndex[peerId]
 						logEntries := make([]LogEntry, logEntrySize)
 						copy(logEntries, rf.log[rf.nextIndex[peerId]:])
@@ -533,7 +531,7 @@ func (rf *Raft) sendAppendEntries() {
 						}
 						requestName := "Raft.AppendEntries"
 						ok := rf.peers[peerId].Call(requestName, &args, &reply)
-						if ok && reply.Term > rf.currentTerm {
+						if reply.Term > rf.currentTerm {
 							rf.mu.Lock()
 							rf.debug ("Stepping down from being a LEADER because peeer %d response was ===> %#v \n",peerId,reply )
 							rf.transitionToFollower(reply.Term)
@@ -546,10 +544,8 @@ func (rf *Raft) sendAppendEntries() {
 							rf.matchIndex[peerId] = rf.matchIndex[peerId] + len(logEntries)
 						} else{
 							rf.debug ("Peer %d did not accept append entries. Response was ===> %#v \n",peerId,reply)
-							//if rf.nextIndex[peerId] > 0 {
 								rf.debug ("Updating the nextIndex of %d  peer to  ===> %d \n",peerId,reply.NextIndex)
 								rf.nextIndex[peerId] = reply.NextIndex
-							//}
 						}
 						rf.moveCommitIndex()
 				}(peer)
@@ -560,7 +556,6 @@ func (rf *Raft) sendAppendEntries() {
 		//Check at the last. This is because this way the first HB will be sent immediately.
 		//timer := time.NewTimer(100 * time.Millisecond)
 		//<-timer.C
-
 	}
 }
 
@@ -604,9 +599,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.debug("My current state: %#v \n", rf)
 	//1. Reply false if term < currentTerm (§5.1)
 	if args.Term >= rf.currentTerm {
-		//if rf.currentState != Follower {
 			rf.transitionToFollower(args.Term)
-		//}
 	}
 	//2. Reply false if log doesn’t contain an entry at prevLogIndex
 	//whose term matches prevLogTerm (§5.3)
@@ -638,10 +631,10 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	//As a first step we will reset the election timer.
 	rf.resetElectionTimer()
 	reply.Term = rf.currentTerm
-	var curEntry LogEntry
+	var lastEntry LogEntry
 	rf.debug("RF LOG  %#v    args.PreviousLogIndex = %d",rf.log,args.PreviousLogIndex)
 		if len(rf.log) > args.PreviousLogIndex {
-			curEntry = rf.log[args.PreviousLogIndex]
+			lastEntry = rf.log[args.PreviousLogIndex]
 		} else {
 			reply.Success = false
 			reply.NextIndex = len(rf.log)
@@ -650,11 +643,11 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		}
 		//2. Reply false if log doesn’t contain an entry at prevLogIndex
 		//whose term matches prevLogTerm (§5.3)
-		if curEntry.Term != args.PreviousLogTerm {
+		if lastEntry.Term != args.PreviousLogTerm {
 			rf.debug("**FALSE**: 2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3). Set the reply.NextIndex to %d ",reply.NextIndex)
 			rf.debug("Setting the nextIndex for this peer to be %d. The contents of the logs  = %#v ",len(rf.log) ,rf.log)
 			reply.Success = false
-			reply.Term = curEntry.Term
+			reply.Term = lastEntry.Term
 			reply.NextIndex = len(rf.log)
 			rf.debug("The contents of the reply to the leader  %#v ",reply)
 			return
@@ -676,7 +669,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			//Send all the received entries into the channel
 			j := 0
 			rf.debug("OLD COMMIT INDEX %d, LEADER COMMIT %d  ", oldCommitIndex, args.LeaderCommit)
-			for i := oldCommitIndex; i < args.LeaderCommit; i++ {
+			for i := oldCommitIndex; i < args.LeaderCommit && i< len(rf.log); i++ {
 				if i==0 { // Position
 					continue
 				}
