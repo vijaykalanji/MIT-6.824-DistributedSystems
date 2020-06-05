@@ -1,4 +1,6 @@
 for i in {1..100};
 do
-	go test -run 2A >> temp.txt; 
+  echo "Test Number $i "
+  echo "Test Number $i " >> temp.txt
+	go test  >> temp.txt
 done

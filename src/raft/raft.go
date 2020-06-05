@@ -192,46 +192,38 @@ type AppendEntriesReply struct {
 //
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
-
 	rf.mu.Lock()
 	rf.debug("***************Inside RequestVote Receiver Handler *********************")
 	defer rf.mu.Unlock()
-	var lastIndex int
-	var lastTerm  int
-	if len(rf.log) > 0 {
-		lastLogEntry := rf.log[len(rf.log)-1]
-		lastIndex = lastLogEntry.LogIndex
-		lastTerm = lastLogEntry.Term
-	} else {
-		lastIndex = 0
-		lastTerm = 0
-	}
 	reply.Term = rf.currentTerm
-	rf.debug("lastTerm = %d & args.LastLogTerm = %d  lastIndex = %d args.LastLogIndex =%d", lastTerm, args.LastLogTerm,lastIndex, args.LastLogIndex)
-	//|| lastTerm> args.LastLogTerm || lastIndex > args.LastLogIndex
-	if lastTerm > args.LastLogTerm || lastIndex > args.LastLogIndex {
-		rf.debug("***************lastTerm & lastIndex check & returning FALSE for the request *********************")
-		reply.VoteGranted = false
+	reply.VoteGranted = false
+	rf.debug("REQUEST FROM CANDIDATE = %#v My rf.currentTerm = %d rf.votedFor = %d", args,rf.currentTerm,rf.votedFor)
+	if args.Term < rf.currentTerm  {
+		reply.Term = rf.currentTerm
 		return
 	}
-	if args.Term < rf.currentTerm  {
-		reply.VoteGranted = false
-		return
-		////rf.debug("My term is higher than candidate's term, myTerm = %d, candidate's term = %d", rf.currentTerm, args.Term)
-		//If votedFor is null or candidateId, and candidate’s log is at
-		//least as up-to-date as receiver’s log, grant vote (§5.2, §5.4)
-	} else if (rf.votedFor == -1 || rf.votedFor == args.CandidateId) && args.LastLogIndex >= lastIndex {
+	/// If the candidate is asking vote for a higher term, then first reset the voted to -1
+	if args.Term > rf.currentTerm {
+		rf.transitionToFollower(args.Term)
+	}
+	//If votedFor is null or candidateId, and candidate’s log is at
+	//least as up-to-date as receiver’s log, grant vote (§5.2, §5.4)
+	if (rf.votedFor == -1 || rf.votedFor == args.CandidateId) && rf.checkWhetherLogIsUpToDate(args) {
 		rf.votedFor = args.CandidateId
 		reply.VoteGranted = true
-		rf.currentTerm = args.Term
-		rf.resetElectionTimer()
-		//rf.debug("I am setting my currentTerm to -->",args.Term,"I am ",rf.me)
-	} else if args.Term > rf.currentTerm {
-		reply.VoteGranted = true
-		rf.transitionToCandidate()
 	}
-	////rf.debug("reply.VoteGranted = %t, currentTerm= %d", reply.VoteGranted, rf.currentTerm)
 }
+
+func (rf *Raft) checkWhetherLogIsUpToDate(args *RequestVoteArgs)(bool){
+	lastIndex, lastTerm := rf.getLastEntryInfo()
+	rf.debug("~~~~~~~~~~~~~~~~~~~~Inside checkWhetherLogIsUpToDate() lastIndex = %d  lastTerm =%d args.LastLogTerm = %d args.LastLogIndex =%d",
+		lastIndex,lastTerm,args.LastLogTerm,args.LastLogIndex)
+	if lastTerm == args.LastLogTerm {
+		return lastIndex <= args.LastLogIndex
+	}
+	return lastTerm < args.LastLogTerm
+}
+
 
 //
 // example code to send a RequestVote RPC to a server.
@@ -282,8 +274,8 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 // the leader.
 //
 func (rf *Raft) Start(command interface{}) (int, int, bool) {
-	index := -1
-	term := -1
+	index := 0
+	term := 0
 	isLeader := true
 	// Your code here (2B).
 	rf.mu.Lock()
@@ -352,7 +344,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	dummyLogEntry := LogEntry{
 		LogIndex: 0,
 		Command:  nil,
-		Term:     -1,
+		Term:     0,
 	}
 	rf.log = append(rf.log, dummyLogEntry)
 	rf.readPersist(persister.ReadRaftState())
@@ -377,16 +369,16 @@ func (rf *Raft) conductElection() {
 	// Spawn off go routines.
 	// Collect the votes.
 	rf.transitionToCandidate()
-	rf.debug("################	Conducting election	################")
+	rf.debug("################	Conducting election TERM = %d	################",rf.currentTerm + 1)
 	lastIndex, lastTerm := rf.getLastEntryInfo()
 	requestVoteArgs := RequestVoteArgs{Term: rf.currentTerm + 1, CandidateId: rf.me, LastLogTerm: lastTerm, LastLogIndex: lastIndex}
 	// Send the request to all the peers.
 	/// voteCount is initialized to 1 indicated this peer has voted for itself.
 	var voteCount = 1
 	count := len(rf.peers) - 1 //Count of peers. I should receive these many votes.
-	////rf.debug(" Count is  %d ", voteCount)
+	rf.debug(" Count is  %d ", voteCount)
 	///Before performing any action check whether the peer is still in the Leader state.
-	if rf.currentState != Leader {
+	if rf.currentState != Leader && rf.currentState != Follower  {
 		//This channel will collect responses from other peers.
 		votesCh := make(chan bool)
 		for id := range rf.peers {
@@ -394,14 +386,14 @@ func (rf *Raft) conductElection() {
 				//rf.debug("Inside Go routine",id)
 				go func(id int, peer *labrpc.ClientEnd) {
 					requestVoteReply := RequestVoteReply{}
-					////rf.debug(" Before sending the request vote to %d ", id)
+					rf.debug(" Before sending the request vote to %d ", id)
 					ok := rf.sendRequestVote(id, &requestVoteArgs, &requestVoteReply)
 					response := ok && requestVoteReply.VoteGranted
-					////rf.debug(" The value of OK= %t and VoteGranted = %t ", ok, requestVoteReply.VoteGranted)
+					rf.debug(" The value of OK= %t and VoteGranted = %t ", ok, requestVoteReply.VoteGranted)
 					//Check now whether everything is OK. This is moved from outside as we are creating requestVoteReply within
 					// Go routine.
 					if requestVoteReply.Term > rf.currentTerm {
-						////rf.debug("Got a higher current term from peer %d ,So breaking requestVoteReply.Term = %d rf.currentTerm = %d", rf.me, requestVoteReply.Term, rf.currentTerm)
+						rf.debug("Got a higher current term from peer %d ,So breaking requestVoteReply.Term = %d rf.currentTerm = %d", rf.me, requestVoteReply.Term, rf.currentTerm)
 						rf.transitionToFollower(requestVoteReply.Term)
 					}
 					votesCh <- response
@@ -422,14 +414,14 @@ func (rf *Raft) conductElection() {
 			if rf.currentState == Follower {
 				break
 			}
-			////rf.debug("Did I receive vote ? --> %t, currentVoteCount =%d ", hasPeerVotedForMe, voteCount)
+			rf.debug("Did I receive vote ? --> %t, currentVoteCount =%d ", hasPeerVotedForMe, voteCount)
 			if hasPeerVotedForMe {
 				voteCount += 1
 				//rf.debug(rf.me ," Incremented vote count-->",voteCount)
 				//rf.debug()
 				if voteCount > (len(rf.peers) / 2) {
 					//rf.debug("I won the election !!! ",rf.me,"Vote count -->",voteCount, " ",len(rf.peers)/2)
-					////rf.debug("I won the election !!! VoteCount=%d, threshold = %d", voteCount, len(rf.peers)/2)
+					rf.debug("I won the election !!! VoteCount=%d, threshold = %d", voteCount, len(rf.peers)/2)
 					go rf.promoteToLeader()
 					break
 				}
@@ -448,7 +440,6 @@ func (rf *Raft) getLastEntryInfo() (int, int) {
 func (rf *Raft) transitionToCandidate() {
 	rf.currentState = Candidate
 	//rf.debug("BEFORE Transition to candidate, term=%d", rf.currentTerm)
-
 	rf.votedFor = rf.me
 	////rf.debug("Transition to candidate, term=%d", rf.currentTerm)
 }
@@ -472,7 +463,7 @@ func (rf *Raft) promoteToLeader() {
 	///When I am the leader, I don't expect to receive any append entries request. Hence the timer is stopped.
 	///If I receive an append entry request with a higher term then, I will have to transition to follower and restart the timer.
 	rf.electionTimer.Stop()
-	////rf.debug("Promoting myself as LEADER")
+	rf.debug("Promoting myself as LEADER")
 	rf.currentTerm = rf.currentTerm + 1
 	rf.currentState = Leader
 	//Paper: (Reinitialized after election)
@@ -512,11 +503,11 @@ func (rf *Raft) sendAppendEntries() {
 		rf.mu.Unlock()
 		/// For each of the peer we shall send a heart beat / append entry.
 		for peer := range rf.peers {
-			indexOfLastLogEntry := rf.getIndexOfLastLogEntry() + 1
 			if peer != rf.me {
 				go func(peerId int) {
+						indexOfLastLogEntry := rf.getIndexOfLastLogEntry() + 1
 						prevLogIndex, prevLogTerm := rf.getPrevLogDetails(peerId)
-						rf.debug (" Inside sendAppendEntries(). Peer id = %d indexOfLastLogEntry = %d , rf.nextIndex[peerId] ===> %d",peerId,indexOfLastLogEntry,rf.nextIndex[peerId])
+						rf.debug (" Inside sendAppendEntries(). Peer id = %d indexOfLastLogEntry of the logM = %d , rf.nextIndex[peerId] ===> %d",peerId,indexOfLastLogEntry,rf.nextIndex[peerId])
 						logEntrySize := indexOfLastLogEntry-rf.nextIndex[peerId]
 						logEntries := make([]LogEntry, logEntrySize)
 						copy(logEntries, rf.log[rf.nextIndex[peerId]:])
@@ -536,18 +527,23 @@ func (rf *Raft) sendAppendEntries() {
 							rf.debug ("Stepping down from being a LEADER because peeer %d response was ===> %#v \n",peerId,reply )
 							rf.transitionToFollower(reply.Term)
 							rf.mu.Unlock()
+							return
 						}
 						if ok && reply.Success{
 							//Update the nextIndex for this peer.
 							rf.debug ("Peer %d accepted the append entries . Response was ===> %#v \n",peerId,reply)
 							rf.nextIndex[peerId] = rf.nextIndex[peerId] + len(logEntries)
-							rf.matchIndex[peerId] = rf.matchIndex[peerId] + len(logEntries)
+							rf.debug ("UPDATING THE matchIndex for Peer %d  %#v \n",peerId,rf.matchIndex)
+							rf.matchIndex[peerId] = prevLogIndex + logEntrySize
+							rf.moveCommitIndex()
 						} else{
 							rf.debug ("Peer %d did not accept append entries. Response was ===> %#v \n",peerId,reply)
-								rf.debug ("Updating the nextIndex of %d  peer to  ===> %d \n",peerId,reply.NextIndex)
-								rf.nextIndex[peerId] = reply.NextIndex
+							if 	reply.NextIndex > 0 {
+								rf.debug("Decrementing the nextIndex of %d  peer to  ===> %d \n", peerId, rf.nextIndex[peerId]  -1)
+								rf.nextIndex[peerId] = rf.nextIndex[peerId]  -1
+							}
 						}
-						rf.moveCommitIndex()
+
 				}(peer)
 			}
 		}
@@ -564,7 +560,7 @@ func (rf *Raft)  moveCommitIndex() {
 	rf.mu.Lock()
 	//rf.debug("Acquired lock as part of moveCommitIndex () +++++++++++++++++")
 	defer rf.mu.Unlock()
-
+	rf.debug("Inside moveCommitIndex () +++++++++++++++++My commitIndex = %d  log length = %d ",rf.commitIndex, len(rf.log))
 	for i := rf.commitIndex; i< len(rf.log);i++ {
 		majorityAgreed :=1 // Leader always agrees with itself.
 		if i==0 { // Position
@@ -575,12 +571,12 @@ func (rf *Raft)  moveCommitIndex() {
 				majorityAgreed++
 			}
 		}
-		rf.debug("Majority Agreed  %d MATCH INDEX %#v COMMIT INDEX %d ",majorityAgreed, rf.matchIndex,rf.commitIndex)
+		rf.debug("CHECKING WHETHER Majority Agreed  %d MATCH INDEX %#v COMMIT INDEX %d ",majorityAgreed, rf.matchIndex,rf.commitIndex)
 		if majorityAgreed > (len(rf.peers) / 2) {
-			rf.debug("INSIDE  IF Trying to apply this message to channel ++++++++++++++++++++++++++++++++++++++++++++++")
 			rf.commitIndex++
 			rf.mu.Unlock()
 			rf.applyCh <- ApplyMsg {CommandValid: true, Command:rf.log[i].Command, CommandIndex:i}
+			rf.debug("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& LEADER Applied this message to channel  %d     %v &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&",i,rf.log[i].Command)
 			rf.mu.Lock()
 		}
 		//rf.debug("AFTER  Trying to apply this message to channel ++++++++++++++++++++++++++++++++++++++++++++++")
@@ -628,8 +624,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	lastLogEntryIndex := len(rf.log) - 1
 	rf.debug("lastLogEntryIndex %d", lastLogEntryIndex)
 	//If we have reached this point then the request has to be one of heart beat or append entries.
-	//As a first step we will reset the election timer.
-	rf.resetElectionTimer()
 	reply.Term = rf.currentTerm
 	var lastEntry LogEntry
 	rf.debug("RF LOG  %#v    args.PreviousLogIndex = %d",rf.log,args.PreviousLogIndex)
@@ -652,12 +646,15 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			rf.debug("The contents of the reply to the leader  %#v ",reply)
 			return
 		}
+		//As a first step we will reset the election timer.
+		rf.resetElectionTimer()
 		//3. If an existing entry conflicts with a new one (same index
 		//but different terms), delete the existing entry and all that
 		//follow it (§5.3)
 		//Clean up everything to the right of matched index
 		rf.log = rf.log[:args.PreviousLogIndex+1]
 		rf.log = append(rf.log, args.LogEntries...)
+
 	//}
 	if args.LeaderCommit > rf.commitIndex {
 		rf.debug("(5) Update commitIndex. LeaderCommit %v  rf.commitIndex %v \n", args.LeaderCommit, rf.commitIndex)
@@ -676,8 +673,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 				rf.debug("Committing %v ", i)
 				applyMsg := ApplyMsg{CommandValid: true, Command: rf.log[i].Command, CommandIndex: i}
 				j++
-				rf.debug("Sent a response to Apply Channel ")
-				rf.debug("applyMsg %v", applyMsg)
+				rf.debug(" &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& PEER Sent a response to Apply Channel  %v  &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&", applyMsg)
 				rf.applyCh <- applyMsg
 			}
 		}()
