@@ -18,6 +18,8 @@ package raft
 //
 
 import (
+	"bytes"
+	"encoding/gob"
 	"math/rand"
 	"sync"
 	"time"
@@ -85,6 +87,12 @@ type Raft struct {
 	applyCh       chan ApplyMsg
 }
 
+type RaftPersistenceObject struct {
+	CurrentTerm int
+	Log         []LogEntry
+	VotedFor         int
+}
+
 ///Each entry contains the term in which it was  created (the number in each box) and a command for the state  machine. An entry is considered committed if it is safe for that entry to be applied to state machines.
 type LogEntry struct {
 	Term     int
@@ -112,14 +120,16 @@ const (
 // see paper's Figure 2 for a description of what should be persistent.
 //
 func (rf *Raft) persist() {
-	// Your code here (2C).
-	// Example:
-	// w := new(bytes.Buffer)
-	// e := labgob.NewEncoder(w)
-	// e.Encode(rf.xxx)
-	// e.Encode(rf.yyy)
-	// data := w.Bytes()
-	// rf.persister.SaveRaftState(data)
+	buf := new(bytes.Buffer)
+	gob.NewEncoder(buf).Encode(
+		RaftPersistenceObject{
+			CurrentTerm:       rf.currentTerm,
+			Log:               rf.log,
+			VotedFor:          rf.votedFor,
+		})
+
+	rf.debug("Persisted RAFT internal data currentTerm = %d Log contents = %#v  VotedFor = %d Length of the data = %d", rf.currentTerm,rf.log,rf.votedFor,buf.Len())
+	rf.persister.SaveRaftState(buf.Bytes())
 }
 
 //
@@ -142,6 +152,12 @@ func (rf *Raft) readPersist(data []byte) {
 	//   rf.xxx = xxx
 	//   rf.yyy = yyy
 	// }
+	r := bytes.NewBuffer(data)
+	d := gob.NewDecoder(r)
+	obj := RaftPersistenceObject{}
+	d.Decode(&obj)
+	rf.votedFor, rf.currentTerm, rf.log = obj.VotedFor, obj.CurrentTerm, obj.Log
+	rf.debug("Read persisted data from the backup  currentTerm = %d Log contents = %#v  VotedFor = %d Length of the data = %d", rf.currentTerm,rf.log,rf.votedFor,len(data))
 }
 
 //
@@ -212,6 +228,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		rf.votedFor = args.CandidateId
 		reply.VoteGranted = true
 	}
+	rf.persist()
 }
 
 func (rf *Raft) checkWhetherLogIsUpToDate(args *RequestVoteArgs)(bool){
@@ -348,7 +365,6 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	}
 	rf.log = append(rf.log, dummyLogEntry)
 	rf.readPersist(persister.ReadRaftState())
-
 	go rf.waitForElectionTimerToGoOff()
 	return rf
 }
@@ -429,6 +445,7 @@ func (rf *Raft) conductElection() {
 			}
 		}
 	}
+	rf.persist()
 }
 func (rf *Raft) getLastEntryInfo() (int, int) {
 	if len(rf.log) > 0 {
@@ -553,6 +570,7 @@ func (rf *Raft) sendAppendEntries() {
 		//timer := time.NewTimer(100 * time.Millisecond)
 		//<-timer.C
 	}
+	rf.persist()
 }
 
 func (rf *Raft)  moveCommitIndex() {
@@ -681,6 +699,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	reply.Success = true
 	//Check at the last. This is because this way the first HB will be sent immediately.
 	//timer := time.NewTimer(100 * time.Millisecond)
+	rf.persist()
 }
 
 func (rf *Raft) getIndexOfLastLogEntry() int {
