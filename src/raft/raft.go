@@ -520,46 +520,7 @@ func (rf *Raft) sendAppendEntries() {
 		/// For each of the peer we shall send a heart beat / append entry.
 		for peer := range rf.peers {
 			if peer != rf.me {
-				go func(peerId int) {
-					indexOfLastLogEntry := rf.getIndexOfLastLogEntry() + 1
-					prevLogIndex, prevLogTerm := rf.getPrevLogDetails(peerId)
-					rf.debug(" Inside sendAppendEntries(). Peer id = %d indexOfLastLogEntry of the logM = %d , rf.nextIndex[peerId] ===> %d", peerId, indexOfLastLogEntry, rf.nextIndex[peerId])
-					logEntrySize := indexOfLastLogEntry - rf.nextIndex[peerId]
-					logEntries := make([]LogEntry, logEntrySize)
-					copy(logEntries, rf.log[rf.nextIndex[peerId]:])
-					reply := AppendEntriesReply{}
-					args := AppendEntriesArgs{
-						Term:             rf.currentTerm,
-						LeaderID:         rf.me,
-						PreviousLogIndex: prevLogIndex,
-						PreviousLogTerm:  prevLogTerm,
-						LogEntries:       logEntries,
-						LeaderCommit:     rf.commitIndex,
-					}
-					requestName := "Raft.AppendEntries"
-					ok := rf.peers[peerId].Call(requestName, &args, &reply)
-					if reply.Term > rf.currentTerm {
-						rf.mu.Lock()
-						rf.debug("Stepping down from being a LEADER because peeer %d response was ===> %#v \n", peerId, reply)
-						rf.transitionToFollower(reply.Term)
-						rf.mu.Unlock()
-						return
-					}
-					if ok && reply.Success {
-						//Update the nextIndex for this peer.
-						rf.debug("Peer %d accepted the append entries . Response was ===> %#v \n", peerId, reply)
-						rf.nextIndex[peerId] = rf.nextIndex[peerId] + len(logEntries)
-						rf.debug("UPDATING THE matchIndex for Peer %d  %#v \n", peerId, rf.matchIndex)
-						rf.matchIndex[peerId] = prevLogIndex + logEntrySize
-					} else {
-						rf.debug("Peer %d did not accept append entries. Response was ===> %#v \n", peerId, reply)
-						if reply.NextIndex > 0 {
-							rf.debug("Decrementing the nextIndex of %d  peer to  ===> %d \n", peerId, rf.nextIndex[peerId]-1)
-							rf.nextIndex[peerId] = rf.nextIndex[peerId] - 1
-						}
-					}
-
-				}(peer)
+				go rf.sendAppendEntriesToAPeer(peer)
 			}
 		}
 		rf.moveCommitIndex()
@@ -570,6 +531,57 @@ func (rf *Raft) sendAppendEntries() {
 		//<-timer.C
 	}
 	rf.persist()
+}
+
+func (rf *Raft) sendAppendEntriesToAPeer(peerId int) {
+	rf.mu.Lock()
+	indexOfLastLogEntry := rf.getIndexOfLastLogEntry() + 1
+	prevLogIndex, prevLogTerm := rf.getPrevLogDetails(peerId)
+	rf.debug(" Inside sendAppendEntries(). Peer id = %d indexOfLastLogEntry of the logM = %d , rf.nextIndex[peerId] ===> %d", peerId, indexOfLastLogEntry, rf.nextIndex[peerId])
+	logEntrySize := indexOfLastLogEntry - rf.nextIndex[peerId]
+	logEntries := make([]LogEntry, logEntrySize)
+	copy(logEntries, rf.log[rf.nextIndex[peerId]:])
+	rf.mu.Unlock()
+	reply := AppendEntriesReply{}
+	args := AppendEntriesArgs{
+		Term:             rf.currentTerm,
+		LeaderID:         rf.me,
+		PreviousLogIndex: prevLogIndex,
+		PreviousLogTerm:  prevLogTerm,
+		LogEntries:       logEntries,
+		LeaderCommit:     rf.commitIndex,
+	}
+
+	requestName := "Raft.AppendEntries"
+		ok := rf.peers[peerId].Call(requestName, &args, &reply)
+		rf.mu.Lock()
+		if !ok  || rf.currentState != Leader || args.Term != rf.currentTerm{
+			rf.mu.Unlock()
+			return
+		}
+		rf.mu.Unlock()
+
+		if reply.Term > rf.currentTerm {
+			rf.mu.Lock()
+			rf.debug("Stepping down from being a LEADER because peeer %d response was ===> %#v \n", peerId, reply)
+			rf.transitionToFollower(reply.Term)
+			rf.persist()
+			rf.mu.Unlock()
+			return
+		}
+		if  reply.Success {
+			//Update the nextIndex for this peer.
+			rf.debug("Peer %d accepted the append entries . Response was ===> %#v \n", peerId, reply)
+			rf.nextIndex[peerId] = rf.nextIndex[peerId] + len(logEntries)
+			rf.debug("UPDATING THE matchIndex for Peer %d  %#v \n", peerId, rf.matchIndex)
+			rf.matchIndex[peerId] = prevLogIndex + logEntrySize
+		} else {
+			rf.debug("Peer %d did not accept append entries. Response was ===> %#v \n", peerId, reply)
+			if rf.nextIndex[peerId]  > 0 {
+				rf.debug("Decrementing the nextIndex of %d  peer to  ===> %d \n", peerId, rf.nextIndex[peerId]-1)
+				rf.nextIndex[peerId] = rf.nextIndex[peerId] - 1
+			}
+		}
 }
 
 func (rf *Raft) moveCommitIndex() {
@@ -589,7 +601,7 @@ func (rf *Raft) moveCommitIndex() {
 			}
 		}
 		rf.debug("CHECKING WHETHER Majority Agreed  %d MATCH INDEX %#v COMMIT INDEX %d ", majorityAgreed, rf.matchIndex, rf.commitIndex)
-		if majorityAgreed > (len(rf.peers) / 2) {
+		if rf.log[len(rf.log)-1].Term == rf.currentTerm && majorityAgreed > (len(rf.peers) / 2) {
 			rf.persist()
 			rf.commitIndex++
 			rf.mu.Unlock()
@@ -627,6 +639,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if args.Term < rf.currentTerm {
 		reply.Success = false
 		reply.Term = rf.currentTerm
+		reply.NextIndex = len(rf.log)
 		return
 	}
 	////rf.debug("Update my term to that of the leaders %d", args.Term)
@@ -659,7 +672,9 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.debug("Setting the nextIndex for this peer to be %d. The contents of the logs  = %#v ", len(rf.log), rf.log)
 		reply.Success = false
 		reply.Term = lastEntry.Term
-		reply.NextIndex = len(rf.log)
+		if reply.NextIndex > 0 {
+			reply.NextIndex--
+		}
 		rf.debug("The contents of the reply to the leader  %#v ", reply)
 		return
 	}
@@ -669,10 +684,17 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	//but different terms), delete the existing entry and all that
 	//follow it (§5.3)
 	//Clean up everything to the right of matched index
-	rf.log = rf.log[:args.PreviousLogIndex+1]
-	rf.log = append(rf.log, args.LogEntries...)
 
-	//}
+	tailLog  := rf.log[args.PreviousLogIndex + 1 :]
+	rf.debug("Tail Log:--->   %#v",tailLog)
+	rf.log = rf.log[:args.PreviousLogIndex+1]
+	rf.debug("Remainder Log %#v",rf.log)
+	if rf.checkConflictInLogs(tailLog, args.LogEntries) || len(tailLog) < len(args.LogEntries) {
+		rf.log = append(rf.log, args.LogEntries...)
+	} else {
+		rf.log = append(rf.log, tailLog...)
+	}
+
 	if args.LeaderCommit > rf.commitIndex {
 		rf.debug("(5) Update commitIndex. LeaderCommit %v  rf.commitIndex %v \n", args.LeaderCommit, rf.commitIndex)
 		//Check whether all the entries are committed prior to this.
@@ -696,9 +718,22 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		}()
 	}
 	reply.Success = true
+	reply.NextIndex = args.PreviousLogIndex
 	//Check at the last. This is because this way the first HB will be sent immediately.
 	//timer := time.NewTimer(100 * time.Millisecond)
 	rf.persist()
+}
+
+func (rf *Raft) checkConflictInLogs(peerLog []LogEntry, leaderLog []LogEntry) bool {
+	for i := range peerLog {
+		if i >= len(leaderLog) {
+			break
+		}
+		if peerLog[i].Term != leaderLog[i].Term {
+			return true
+		}
+	}
+	return false
 }
 
 func (rf *Raft) getIndexOfLastLogEntry() int {
