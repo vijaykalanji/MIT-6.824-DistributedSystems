@@ -128,7 +128,7 @@ func (rf *Raft) persist() {
 			VotedFor:    rf.votedFor,
 		})
 
-	rf.debug("Persisted RAFT internal data currentTerm = %d Log contents = %#v  VotedFor = %d Length of the data = %d", rf.currentTerm, rf.log, rf.votedFor, buf.Len())
+	//rf.debug("Persisted RAFT internal data currentTerm = %d Log contents = %#v  VotedFor = %d Length of the data = %d", rf.currentTerm, rf.log, rf.votedFor, buf.Len())
 	rf.persister.SaveRaftState(buf.Bytes())
 }
 
@@ -573,15 +573,37 @@ func (rf *Raft) sendAppendEntriesToAPeer(peerId int) {
 			//Update the nextIndex for this peer.
 			rf.debug("Peer %d accepted the append entries . Response was ===> %#v \n", peerId, reply)
 			rf.nextIndex[peerId] = rf.nextIndex[peerId] + len(logEntries)
-			rf.debug("UPDATING THE matchIndex for Peer %d  %#v \n", peerId, rf.matchIndex)
 			rf.matchIndex[peerId] = prevLogIndex + logEntrySize
+			rf.debug("UPDATED THE matchIndex for Peer %d  %#v \n", peerId, rf.matchIndex)
 		} else {
 			rf.debug("Peer %d did not accept append entries. Response was ===> %#v \n", peerId, reply)
-			if rf.nextIndex[peerId]  > 0 {
+			/*if rf.nextIndex[peerId]  > 0 {
 				rf.debug("Decrementing the nextIndex of %d  peer to  ===> %d \n", peerId, rf.nextIndex[peerId]-1)
 				rf.nextIndex[peerId] = rf.nextIndex[peerId] - 1
+			}*/
+			///
+			// The terms don't match from response. => Go back to previous term and send the first entry of that term.
+			if rf.currentTerm != reply.Term {
+				rf.nextIndex[peerId] = rf.getFirstIndexTerm(reply.Term)
+			} else{
+				rf.nextIndex[peerId] = rf.getFirstIndexTerm(rf.currentTerm)
 			}
 		}
+}
+
+func (rf *Raft) getFirstIndexTerm(term int) int {
+	i := 0
+	for i = len(rf.log)-1 ; i >=0  ;i-- {
+		if rf.log[i].Term == term {
+			j:=i
+			for;j>=0;j--{
+				if rf.log[j].Term != term{
+					return j+1
+				}
+			}
+		}
+	}
+ return 0
 }
 
 func (rf *Raft) moveCommitIndex() {
@@ -662,6 +684,8 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	} else {
 		reply.Success = false
 		reply.NextIndex = len(rf.log)
+		reply.Term = args.PreviousLogTerm
+		////
 		rf.debug("I did not agree with AppendEntries. Setting nextIndex to %d and returning FALSE", reply.NextIndex)
 		return
 	}
@@ -671,7 +695,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.debug("**FALSE**: 2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3). Set the reply.NextIndex to %d ", reply.NextIndex)
 		rf.debug("Setting the nextIndex for this peer to be %d. The contents of the logs  = %#v ", len(rf.log), rf.log)
 		reply.Success = false
-		reply.Term = lastEntry.Term
+		reply.Term = args.PreviousLogTerm
 		if reply.NextIndex > 0 {
 			reply.NextIndex--
 		}
