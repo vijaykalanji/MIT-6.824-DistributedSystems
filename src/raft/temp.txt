@@ -1,0 +1,514 @@
+Test Number 1 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  32.0  5 2612  585
+PASS
+ok  	raft	32.774s
+Test Number 2 
+Test (2C): Figure 8 (unreliable) ...
+2020/10/30 19:23:16 apply error: commit index=2 server=4 5880 != server=3 173
+exit status 1
+FAIL	raft	30.588s
+Test Number 3 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  41.5  5 3532  616
+PASS
+ok  	raft	41.636s
+Test Number 4 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  39.4  5 2180  236
+PASS
+ok  	raft	39.522s
+Test Number 5 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  37.0  5 2872  547
+PASS
+ok  	raft	37.126s
+Test Number 6 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  39.9  5 2108  494
+PASS
+ok  	raft	40.177s
+Test Number 7 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  39.4  5 3404  209
+PASS
+ok  	raft	39.480s
+Test Number 8 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  31.8  5 3316  504
+PASS
+ok  	raft	31.981s
+Test Number 9 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  35.4  5 3432  558
+PASS
+ok  	raft	35.474s
+Test Number 10 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  29.8  5 1852  422
+PASS
+ok  	raft	29.992s
+Test Number 11 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  40.2  5 3604  496
+PASS
+ok  	raft	40.253s
+Test Number 12 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  37.1  5 3452  445
+PASS
+ok  	raft	37.715s
+Test Number 13 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  40.3  5 3072  308
+PASS
+ok  	raft	40.417s
+Test Number 14 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  36.7  5 3048  262
+PASS
+ok  	raft	36.823s
+Test Number 15 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  41.3  5 3016  691
+PASS
+ok  	raft	41.411s
+Test Number 16 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.8  5 3200  474
+PASS
+ok  	raft	34.957s
+Test Number 17 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  35.6  5 3000  661
+PASS
+ok  	raft	35.750s
+Test Number 18 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  33.1  5 2544  182
+PASS
+ok  	raft	33.223s
+Test Number 19 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  41.4  5 3408  382
+PASS
+ok  	raft	41.500s
+Test Number 20 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  41.8  5 2980   55
+PASS
+ok  	raft	41.917s
+Test Number 21 
+Test (2C): Figure 8 (unreliable) ...
+--- FAIL: TestFigure8Unreliable2C (47.09s)
+    config.go:484: one(6999) failed to reach agreement
+FAIL
+exit status 1
+FAIL	raft	47.265s
+Test Number 22 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.8  5 1820  167
+PASS
+ok  	raft	34.894s
+Test Number 23 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  43.4  5 3444  321
+PASS
+ok  	raft	43.501s
+Test Number 24 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.6  5 2792  244
+PASS
+ok  	raft	34.721s
+Test Number 25 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  44.0  5 3304  509
+PASS
+ok  	raft	44.249s
+Test Number 26 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  30.8  5 2536  183
+PASS
+ok  	raft	30.839s
+Test Number 27 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  39.4  5 2932  461
+PASS
+ok  	raft	39.465s
+Test Number 28 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  33.3  5 2028  539
+PASS
+ok  	raft	33.361s
+Test Number 29 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  39.3  5 3408  551
+PASS
+ok  	raft	39.363s
+Test Number 30 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.1  5 2276   53
+PASS
+ok  	raft	34.211s
+Test Number 31 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  30.5  5 3008   20
+PASS
+ok  	raft	30.561s
+Test Number 32 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  31.1  5 1700   14
+PASS
+ok  	raft	31.161s
+Test Number 33 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  40.9  5 2900  346
+PASS
+ok  	raft	40.967s
+Test Number 34 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.8  5 3304  493
+PASS
+ok  	raft	35.044s
+Test Number 35 
+Test (2C): Figure 8 (unreliable) ...
+--- FAIL: TestFigure8Unreliable2C (47.12s)
+    config.go:484: one(1318) failed to reach agreement
+FAIL
+exit status 1
+FAIL	raft	47.208s
+Test Number 36 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  32.7  5 2336  787
+PASS
+ok  	raft	32.788s
+Test Number 37 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  36.8  5 2800  396
+PASS
+ok  	raft	36.924s
+Test Number 38 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  41.3  5 3620  490
+PASS
+ok  	raft	41.456s
+Test Number 39 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  30.7  5 2728  738
+PASS
+ok  	raft	30.776s
+Test Number 40 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  38.1  5 3132  168
+PASS
+ok  	raft	38.236s
+Test Number 41 
+Test (2C): Figure 8 (unreliable) ...
+--- FAIL: TestFigure8Unreliable2C (45.20s)
+    config.go:484: one(957) failed to reach agreement
+FAIL
+exit status 1
+FAIL	raft	45.295s
+Test Number 42 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  33.2  5 2660  469
+PASS
+ok  	raft	33.544s
+Test Number 43 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  42.0  5 3792  457
+PASS
+ok  	raft	42.046s
+Test Number 44 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  36.3  5 3880  396
+PASS
+ok  	raft	36.347s
+Test Number 45 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  32.8  5 2804  647
+PASS
+ok  	raft	32.920s
+Test Number 46 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  37.5  5 3288  401
+PASS
+ok  	raft	37.588s
+Test Number 47 
+Test (2C): Figure 8 (unreliable) ...
+--- FAIL: TestFigure8Unreliable2C (38.38s)
+    config.go:484: one(1924) failed to reach agreement
+FAIL
+exit status 1
+FAIL	raft	38.530s
+Test Number 48 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  38.3  5 3308  105
+PASS
+ok  	raft	38.385s
+Test Number 49 
+Test (2C): Figure 8 (unreliable) ...
+2020/10/30 19:53:00 apply error: commit index=3 server=0 1468 != server=2 1395
+exit status 1
+FAIL	raft	34.821s
+Test Number 50 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  39.5  5 3504  408
+PASS
+ok  	raft	39.605s
+Test Number 51 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  37.8  5 3148  569
+PASS
+ok  	raft	38.000s
+Test Number 52 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  36.7  5 2600  272
+PASS
+ok  	raft	36.741s
+Test Number 53 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  38.7  5 2904  511
+PASS
+ok  	raft	38.909s
+Test Number 54 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  33.1  5 3028   99
+PASS
+ok  	raft	33.168s
+Test Number 55 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  31.9  5 2216  279
+PASS
+ok  	raft	31.998s
+Test Number 56 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  42.7  5 3836  198
+PASS
+ok  	raft	43.212s
+Test Number 57 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  35.9  5 2428  385
+PASS
+ok  	raft	36.039s
+Test Number 58 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  36.2  5 3292  260
+PASS
+ok  	raft	36.283s
+Test Number 59 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.8  5 2916  192
+PASS
+ok  	raft	34.956s
+Test Number 60 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.9  5 3140  381
+PASS
+ok  	raft	35.089s
+Test Number 61 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.3  5 3032   60
+PASS
+ok  	raft	34.449s
+Test Number 62 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  38.1  5 3160  836
+PASS
+ok  	raft	38.225s
+Test Number 63 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  30.8  5 2804  170
+PASS
+ok  	raft	30.873s
+Test Number 64 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.2  5 3252  466
+PASS
+ok  	raft	34.291s
+Test Number 65 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  40.3  5 2972   65
+PASS
+ok  	raft	40.394s
+Test Number 66 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  40.9  5 2832  358
+PASS
+ok  	raft	41.013s
+Test Number 67 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  32.1  5 2896  309
+PASS
+ok  	raft	32.152s
+Test Number 68 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  38.4  5 3876  460
+PASS
+ok  	raft	38.501s
+Test Number 69 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  36.9  5 3260  441
+PASS
+ok  	raft	37.117s
+Test Number 70 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.9  5 2912  430
+PASS
+ok  	raft	35.109s
+Test Number 71 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  33.3  5 2276  155
+PASS
+ok  	raft	33.424s
+Test Number 72 
+Test (2C): Figure 8 (unreliable) ...
+--- FAIL: TestFigure8Unreliable2C (44.96s)
+    config.go:484: one(8827) failed to reach agreement
+FAIL
+exit status 1
+FAIL	raft	45.055s
+Test Number 73 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  38.0  5 2536  137
+PASS
+ok  	raft	38.093s
+Test Number 74 
+Test (2C): Figure 8 (unreliable) ...
+2020/10/30 20:08:30 apply error: commit index=14 server=0 2984 != server=4 8255
+exit status 1
+FAIL	raft	37.617s
+Test Number 75 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  33.1  5 2596  121
+PASS
+ok  	raft	33.253s
+Test Number 76 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  37.0  5 3176  320
+PASS
+ok  	raft	37.100s
+Test Number 77 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  37.2  5 2660  562
+PASS
+ok  	raft	37.277s
+Test Number 78 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  36.4  5 3080  722
+PASS
+ok  	raft	36.532s
+Test Number 79 
+Test (2C): Figure 8 (unreliable) ...
+--- FAIL: TestFigure8Unreliable2C (44.06s)
+    config.go:484: one(3778) failed to reach agreement
+FAIL
+exit status 1
+FAIL	raft	44.212s
+Test Number 80 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  39.3  5 3312  516
+PASS
+ok  	raft	39.390s
+Test Number 81 
+Test (2C): Figure 8 (unreliable) ...
+--- FAIL: TestFigure8Unreliable2C (41.90s)
+    config.go:484: one(8866) failed to reach agreement
+FAIL
+exit status 1
+FAIL	raft	42.000s
+Test Number 82 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  38.1  5 3256  138
+PASS
+ok  	raft	38.169s
+Test Number 83 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.7  5 3452  389
+PASS
+ok  	raft	34.757s
+Test Number 84 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  37.9  5 3192  469
+PASS
+ok  	raft	38.008s
+Test Number 85 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  31.6  5 2760  330
+PASS
+ok  	raft	31.757s
+Test Number 86 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  41.9  5 3084  146
+PASS
+ok  	raft	42.060s
+Test Number 87 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.3  5 3368  723
+PASS
+ok  	raft	34.522s
+Test Number 88 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  32.6  5 2876  352
+PASS
+ok  	raft	32.675s
+Test Number 89 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  35.9  5 3136  139
+PASS
+ok  	raft	36.011s
+Test Number 90 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  27.8  5 2112  585
+PASS
+ok  	raft	27.902s
+Test Number 91 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.0  5 2512  495
+PASS
+ok  	raft	34.137s
+Test Number 92 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  34.1  5 2884  152
+PASS
+ok  	raft	34.412s
+Test Number 93 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  35.3  5 3132  549
+PASS
+ok  	raft	35.385s
+Test Number 94 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  40.4  5 3180  603
+PASS
+ok  	raft	40.545s
+Test Number 95 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  31.3  5 2260  435
+PASS
+ok  	raft	31.619s
+Test Number 96 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  39.3  5 3424   62
+PASS
+ok  	raft	39.391s
+Test Number 97 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  39.1  5 1584   73
+PASS
+ok  	raft	39.220s
+Test Number 98 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  37.0  5 2468   94
+PASS
+ok  	raft	37.054s
+Test Number 99 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  37.3  5 2940  385
+PASS
+ok  	raft	37.424s
+Test Number 100 
+Test (2C): Figure 8 (unreliable) ...
+  ... Passed --  30.5  5 2648  499
+PASS
+ok  	raft	30.841s
