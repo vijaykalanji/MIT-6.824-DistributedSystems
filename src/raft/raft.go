@@ -82,6 +82,8 @@ type Raft struct {
 
 	newEntryCh chan int // frank's suggestion
 
+	failedPeerHandlerChan chan int
+
 	currentState  string
 	electionTimer *time.Timer
 	applyCh       chan ApplyMsg
@@ -505,6 +507,9 @@ func (rf *Raft) sendAppendEntries() {
 	for {
 		// frank's suggestion:
 		select {
+		case failedPeerId := <- rf.failedPeerHandlerChan:
+			rf.debug("Sending append entries to peer with id = %d failed.Retrying... \n", failedPeerId)
+			rf.sendAppendEntriesToAPeer(failedPeerId)
 		case <-ticker.C:
 		case <-rf.newEntryCh:
 		}
@@ -570,24 +575,32 @@ func (rf *Raft) sendAppendEntriesToAPeer(peerId int) {
 			return
 		}
 		if  reply.Success {
+			// Return if you get a stale entry from the peer.
+			if reply.Term < rf.currentTerm {
+				rf.debug("Current Term = %d. Received a stale entry from  peer %d response was ===> %#v \n", rf.currentTerm,peerId, reply)
+				return
+			}
 			//Update the nextIndex for this peer.
 			rf.debug("Peer %d accepted the append entries . Response was ===> %#v \n", peerId, reply)
-			rf.nextIndex[peerId] = rf.nextIndex[peerId] + len(logEntries)
+			rf.debug("Updated the next index for peer %d from %d to %d  \n", peerId, rf.nextIndex[peerId],rf.nextIndex[peerId] + len(logEntries))
+			//rf.nextIndex[peerId] = rf.nextIndex[peerId] + len(logEntries)
 			rf.matchIndex[peerId] = prevLogIndex + logEntrySize
+			rf.nextIndex[peerId] = rf.matchIndex[peerId]+1
 			rf.debug("UPDATED THE matchIndex for Peer %d  %#v \n", peerId, rf.matchIndex)
 		} else {
-			rf.debug("Peer %d did not accept append entries. Response was ===> %#v \n", peerId, reply)
-			/*if rf.nextIndex[peerId]  > 0 {
-				rf.debug("Decrementing the nextIndex of %d  peer to  ===> %d \n", peerId, rf.nextIndex[peerId]-1)
-				rf.nextIndex[peerId] = rf.nextIndex[peerId] - 1
-			}*/
-			///
-			// The terms don't match from response. => Go back to previous term and send the first entry of that term.
-			if rf.currentTerm != reply.Term {
+				// Update the nextIndex if and only if it moves in the forward direction.
+			    // This check is to avoid out of order entries.
+				/* nextIndexFromPeer := rf.getFirstIndexTerm(reply.Term)
+				  if nextIndexFromPeer > rf.getFirstIndexTerm(reply.Term){
+						rf.nextIndex[peerId] = rf.getFirstIndexTerm(reply.Term)
+			      }
+
+			     */
 				rf.nextIndex[peerId] = rf.getFirstIndexTerm(reply.Term)
-			} else{
-				rf.nextIndex[peerId] = rf.getFirstIndexTerm(rf.currentTerm)
-			}
+				go func() {
+					rf.failedPeerHandlerChan <- peerId
+				}()
+
 		}
 }
 
