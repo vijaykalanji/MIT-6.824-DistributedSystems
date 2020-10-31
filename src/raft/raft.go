@@ -590,12 +590,10 @@ func (rf *Raft) sendAppendEntriesToAPeer(peerId int) {
 		} else {
 				// Update the nextIndex if and only if it moves in the forward direction.
 			    // This check is to avoid out of order entries.
-				/* nextIndexFromPeer := rf.getFirstIndexTerm(reply.Term)
+				 nextIndexFromPeer := rf.getFirstIndexTerm(reply.Term)
 				  if nextIndexFromPeer > rf.getFirstIndexTerm(reply.Term){
 						rf.nextIndex[peerId] = rf.getFirstIndexTerm(reply.Term)
 			      }
-
-			     */
 				rf.nextIndex[peerId] = rf.getFirstIndexTerm(reply.Term)
 				go func() {
 					rf.failedPeerHandlerChan <- peerId
