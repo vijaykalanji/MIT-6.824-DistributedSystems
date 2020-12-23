@@ -1,6 +1,9 @@
 package raftkv
 
-import "labrpc"
+import (
+	"fmt"
+	"labrpc"
+)
 import "crypto/rand"
 import "math/big"
 
@@ -8,6 +11,9 @@ import "math/big"
 type Clerk struct {
 	servers []*labrpc.ClientEnd
 	// You will have to modify this struct.
+
+	//Caching the current leader for faster responses.
+	currentLeader int
 }
 
 func nrand() int64 {
@@ -21,6 +27,7 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 	ck := new(Clerk)
 	ck.servers = servers
 	// You'll have to add code here.
+	ck.currentLeader = 0
 	return ck
 }
 
@@ -39,8 +46,27 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 func (ck *Clerk) Get(key string) string {
 
 	// You will have to modify this function.
-	return ""
+	///Create the request. The structure is defined in server.go
+	args := GetArgs{Key: key}
+	reply := GetReply{}
+	for   {
+		fmt.Println("Clerk Trying to get key = ",key )
+		ok := ck.servers[ck.currentLeader].Call("KVServer.Get", &args, &reply)
+		fmt.Println("Server returned ok = ",ok,"WrongLeader = ",reply.WrongLeader)
+		if ok && !reply.WrongLeader {
+			fmt.Println("Reply value = ",reply.Value,"Reply Error = ",reply.Err)
+			fmt.Println("---------------------------------------------------------------------------")
+			if reply.Err == ErrNoKey {
+				return ""
+			}
+			return reply.Value
+		}
+		//Consider the next peer as leader and then give it a try.
+		ck.currentLeader = (ck.currentLeader + 1) % len(ck.servers)
+		fmt.Println("Clerk incrementing the leader ", ck.currentLeader )
+	}
 }
+
 
 //
 // shared by Put and Append.
@@ -54,6 +80,16 @@ func (ck *Clerk) Get(key string) string {
 //
 func (ck *Clerk) PutAppend(key string, value string, op string) {
 	// You will have to modify this function.
+	args := PutAppendArgs{Key: key, Value: value, Op: op}
+	for {
+		reply := PutAppendReply{}
+		ok := ck.servers[ck.currentLeader].Call("KVServer.PutAppend", &args, &reply)
+		if ok && !reply.WrongLeader {
+			return
+		}
+		//Consider the next peer as leader and then give it a try.
+		ck.currentLeader = (ck.currentLeader + 1) % len(ck.servers)
+	}
 }
 
 func (ck *Clerk) Put(key string, value string) {
