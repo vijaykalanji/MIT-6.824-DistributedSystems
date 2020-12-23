@@ -1,11 +1,13 @@
 package raftkv
 
 import (
+	"fmt"
 	"labgob"
 	"labrpc"
 	"log"
 	"raft"
 	"sync"
+	"time"
 )
 
 const Debug = 0
@@ -22,6 +24,9 @@ type Op struct {
 	// Your definitions here.
 	// Field names must start with capital letters,
 	// otherwise RPC will break.
+	OpName	string
+	Key 	string
+	Value 	string
 }
 
 type KVServer struct {
@@ -30,18 +35,81 @@ type KVServer struct {
 	rf      *raft.Raft
 	applyCh chan raft.ApplyMsg
 
-	maxraftstate int // snapshot if log grows this big
-
 	// Your definitions here.
+	maxraftstate int // snapshot if log grows this big
+	kvStore	map[string]string   // key-value store
+	logIndexVsOpSucceededChan	map[int]chan Op
+
 }
 
 
 func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	// Your code here.
+	op := Op{OpName: "Get", Key: args.Key}
+	fmt.Println("SERVER:Trying to get consenus")
+	ok := kv.getConsensusFromRAFT(op)
+
+	if !ok {
+		reply.WrongLeader = true
+		return
+	}
+
+	reply.WrongLeader = false
+	kv.mu.Lock()
+	val, isKeyPresent := kv.kvStore[args.Key]
+	kv.mu.Unlock()
+
+	if isKeyPresent {
+		reply.Err = OK
+		reply.Value = val
+	} else {
+		reply.Err = ErrNoKey
+	}
+
 }
 
 func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 	// Your code here.
+	op := Op{OpName: args.Op, Key: args.Key, Value: args.Value}
+	ok := kv.getConsensusFromRAFT(op)
+
+	if !ok {
+		reply.WrongLeader = true
+		return
+	}
+
+	reply.WrongLeader = false
+	reply.Err = OK
+}
+
+func (kv *KVServer) getConsensusFromRAFT(op Op) bool {
+	index, _, isLeader := kv.rf.Start(op)
+	fmt.Println("SERVER: Returned value from RAFT: index =  ",index,"Is Leader = ",isLeader)
+	if !isLeader {
+		return false
+	}
+
+	kv.mu.Lock()
+	ch, ok := kv.logIndexVsOpSucceededChan[index]
+
+	if !ok {
+		fmt.Println("SERVER: Adding channel to index = ",index)
+		ch = make(chan Op, 1)
+		kv.logIndexVsOpSucceededChan[index] = ch
+	}
+
+	kv.mu.Unlock()
+
+	select {
+		case cmd := <-ch:
+			fmt.Println("SERVER: Command = ",cmd,"OP = ",op)
+			return cmd == op
+		case <-time.After(800 * time.Millisecond):
+			fmt.Println("SERVER: Could not arrive at consensus for Operation ",op.OpName ,"Key = ",op.Key,"Value = ",op.Value)
+			return false
+	}
+
+
 }
 
 //
@@ -53,6 +121,33 @@ func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 func (kv *KVServer) Kill() {
 	kv.rf.Kill()
 	// Your code here, if desired.
+}
+
+func (kv *KVServer) startListeningOnApplyChannel() {
+
+	for {
+		msg := <-kv.applyCh
+		op := msg.Command.(Op)
+
+		kv.mu.Lock()
+
+		if op.OpName != "Get" {
+			switch op.OpName {
+			case "Put":
+				kv.kvStore[op.Key] = op.Value
+			case "Append":
+				kv.kvStore[op.Key] += op.Value
+			}
+		}
+
+		ch, ok := kv.logIndexVsOpSucceededChan[msg.CommandIndex]
+
+		if ok {
+			ch <- op
+		}
+
+		kv.mu.Unlock()
+	}
 }
 
 //
@@ -82,8 +177,10 @@ func StartKVServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persiste
 
 	kv.applyCh = make(chan raft.ApplyMsg)
 	kv.rf = raft.Make(servers, me, persister, kv.applyCh)
+	kv.kvStore = make(map[string]string)
+    kv.logIndexVsOpSucceededChan = make(map[int]chan Op)
 
-	// You may need initialization code here.
+    go kv.startListeningOnApplyChannel()
 
-	return kv
+    return kv
 }
