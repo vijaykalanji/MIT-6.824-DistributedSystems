@@ -19,14 +19,13 @@ func DPrintf(format string, a ...interface{}) (n int, err error) {
 	return
 }
 
-
 type Op struct {
 	// Your definitions here.
 	// Field names must start with capital letters,
 	// otherwise RPC will break.
-	OpName	string
-	Key 	string
-	Value 	string
+	OpName string
+	Key    string
+	Value  string
 }
 
 type KVServer struct {
@@ -36,17 +35,14 @@ type KVServer struct {
 	applyCh chan raft.ApplyMsg
 
 	// Your definitions here.
-	maxraftstate int // snapshot if log grows this big
-	kvStore	map[string]string   // key-value store
-	logIndexVsOpSucceededChan	map[int]chan Op
-
+	maxraftstate              int               // snapshot if log grows this big
+	kvStore                   map[string]string // key-value store
+	logIndexVsOpSucceededChan map[int]chan Op
 }
-
 
 func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	// Your code here.
 	op := Op{OpName: "Get", Key: args.Key}
-	fmt.Println("SERVER:Trying to get consenus")
 	ok := kv.getConsensusFromRAFT(op)
 
 	if !ok {
@@ -84,31 +80,32 @@ func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 
 func (kv *KVServer) getConsensusFromRAFT(op Op) bool {
 	index, _, isLeader := kv.rf.Start(op)
-	fmt.Println("SERVER: Returned value from RAFT: index =  ",index,"Is Leader = ",isLeader)
+
 	if !isLeader {
+		fmt.Printf("[SERVER] [%d] NOT LEADER \n", kv.me)
 		return false
 	}
+	fmt.Printf("[SERVER] [%d] raft returned index = %d\n", kv.me, index)
 
 	kv.mu.Lock()
 	ch, ok := kv.logIndexVsOpSucceededChan[index]
 
 	if !ok {
-		fmt.Println("SERVER: Adding channel to index = ",index)
 		ch = make(chan Op, 1)
 		kv.logIndexVsOpSucceededChan[index] = ch
 	}
 
 	kv.mu.Unlock()
 
+	fmt.Printf("[SERVER] [%d] waiting for index = %d\n", kv.me, index)
 	select {
-		case cmd := <-ch:
-			fmt.Println("SERVER: Command = ",cmd,"OP = ",op)
-			return cmd == op
-		case <-time.After(800 * time.Millisecond):
-			fmt.Println("SERVER: Could not arrive at consensus for Operation ",op.OpName ,"Key = ",op.Key,"Value = ",op.Value)
-			return false
+	case cmd := <-ch:
+		fmt.Printf("[SERVER] [%d] got index = %d, match? %t\n", kv.me, index, cmd == op)
+		return cmd == op
+	case <-time.After(800 * time.Millisecond):
+		fmt.Printf("[SERVER] [%d] timeout for index = %d\n", kv.me, index)
+		return false
 	}
-
 
 }
 
@@ -128,6 +125,8 @@ func (kv *KVServer) startListeningOnApplyChannel() {
 	for {
 		msg := <-kv.applyCh
 		op := msg.Command.(Op)
+
+		fmt.Printf("[SERVER] [%d] got from applyCh op = %v\n", kv.me, op)
 
 		kv.mu.Lock()
 
@@ -178,9 +177,9 @@ func StartKVServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persiste
 	kv.applyCh = make(chan raft.ApplyMsg)
 	kv.rf = raft.Make(servers, me, persister, kv.applyCh)
 	kv.kvStore = make(map[string]string)
-    kv.logIndexVsOpSucceededChan = make(map[int]chan Op)
+	kv.logIndexVsOpSucceededChan = make(map[int]chan Op)
 
-    go kv.startListeningOnApplyChannel()
+	go kv.startListeningOnApplyChannel()
 
-    return kv
+	return kv
 }

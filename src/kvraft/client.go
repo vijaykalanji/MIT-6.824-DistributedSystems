@@ -7,7 +7,6 @@ import (
 import "crypto/rand"
 import "math/big"
 
-
 type Clerk struct {
 	servers []*labrpc.ClientEnd
 	// You will have to modify this struct.
@@ -48,13 +47,13 @@ func (ck *Clerk) Get(key string) string {
 	// You will have to modify this function.
 	///Create the request. The structure is defined in server.go
 	args := GetArgs{Key: key}
-	reply := GetReply{}
-	for   {
-		fmt.Println("Clerk Trying to get key = ",key )
+	fmt.Println("[CLERK] GET key =", key)
+	for {
+		reply := GetReply{}
+		fmt.Printf("[CLERK] trying server %d\n", ck.currentLeader)
 		ok := ck.servers[ck.currentLeader].Call("KVServer.Get", &args, &reply)
-		fmt.Println("Server returned ok = ",ok,"WrongLeader = ",reply.WrongLeader)
+		fmt.Printf("[CLERK] server returned res=%t reply=%+v\n", ok, reply)
 		if ok && !reply.WrongLeader {
-			fmt.Println("Reply value = ",reply.Value,"Reply Error = ",reply.Err)
 			fmt.Println("---------------------------------------------------------------------------")
 			if reply.Err == ErrNoKey {
 				return ""
@@ -63,10 +62,8 @@ func (ck *Clerk) Get(key string) string {
 		}
 		//Consider the next peer as leader and then give it a try.
 		ck.currentLeader = (ck.currentLeader + 1) % len(ck.servers)
-		fmt.Println("Clerk incrementing the leader ", ck.currentLeader )
 	}
 }
-
 
 //
 // shared by Put and Append.
@@ -81,10 +78,14 @@ func (ck *Clerk) Get(key string) string {
 func (ck *Clerk) PutAppend(key string, value string, op string) {
 	// You will have to modify this function.
 	args := PutAppendArgs{Key: key, Value: value, Op: op}
+	fmt.Printf("[CLERK] PA args = %+v\n", args)
 	for {
 		reply := PutAppendReply{}
+		fmt.Printf("[CLERK] trying server %d\n", ck.currentLeader)
 		ok := ck.servers[ck.currentLeader].Call("KVServer.PutAppend", &args, &reply)
+		fmt.Printf("[CLERK] server returned res=%t reply=%+v\n", ok, reply)
 		if ok && !reply.WrongLeader {
+			fmt.Println("---------------------------------------------------------------------------")
 			return
 		}
 		//Consider the next peer as leader and then give it a try.
